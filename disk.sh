@@ -42,9 +42,32 @@ prepare_disk() {
 	cryptsetup -y -v luksFormat --type luks2 $dev_rootfs
 	cryptsetup open $dev_rootfs cryptroot
 	mkfs.btrfs -f /dev/mapper/cryptroot
+
+	announce Preparing rootfs subvolumes $dev_rootfs
+	mount /dev/mapper/cryptroot /mnt
+	btrfs subvolume create /mnt/@
+	btrfs subvolume create /mnt/@home
+	btrfs subvolume create /mnt/@snapshots
+	umount /mnt
+
+	mount -o subvol=@ /dev/mapper/cryptroot /mnt
+	mkdir /mnt/home /mnt/.snapshots
+	mount -o subvol=@home /dev/mapper/cryptroot /mnt/home
+	mount -o subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
+}
+
+install_bootloader() {
+	local dev_esp=${1}1
+
+	announce Installing bootloader on $dev_esp
+	mkdir /mnt/boot
+	mount $dev_esp /mnt/boot
+
+	bootctl install
 }
 
 DISK_MODEL='Samsung SSD 850'
 DISK_DEV=/dev/$(find_disk_dev "$DISK_MODEL")
 
 prepare_disk $DISK_DEV
+#install_bootloader $DISK_DEV
