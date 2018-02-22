@@ -40,7 +40,7 @@ prepare_disk() {
 
 	announce Formatting encrypted rootfs $dev_rootfs
 	cryptsetup -y -v luksFormat --type luks2 $dev_rootfs
-	cryptsetup open $dev_rootfs cryptroot
+	cryptsetup --persistent --allow-discards open $dev_rootfs cryptroot
 	mkfs.btrfs -f /dev/mapper/cryptroot
 
 	announce Preparing rootfs subvolumes $dev_rootfs
