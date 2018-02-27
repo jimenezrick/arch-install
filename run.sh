@@ -18,5 +18,10 @@ source $CWD/config.sh
 
 DISK_DEV=/dev/$(find_disk_dev "$DISK_MODEL")
 
-prepare_disk $DISK_DEV
+verify_uefi_boot
+verify_network_connectivity
+sync_clock
+
+#prepare_disk $DISK_DEV
+#install_arch
 #install_bootloader $DISK_DEV

@@ -1,7 +1,3 @@
-#!/bin/bash
-
-set -euo pipefail
-
 find_disk_dev() {
 	local model=$1
 	local dev=$(lsblk -S -o kname,model | awk "/$model/"'{print $1}')

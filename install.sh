@@ -1,7 +1,3 @@
-#!/bin/bash
-
-set -euo pipefail
-
 verify_uefi_boot() {
 	find -name /sys/firmware/efi/efivars
 	if [[ $? != 0 ]]
