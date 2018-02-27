@@ -1,13 +1,12 @@
 verify_uefi_boot() {
-	find -name /sys/firmware/efi/efivars
-	if [[ $? != 0 ]]
+	if [[ ! -d /sys/firmware/efi/efivars ]]
 	then
 		die 'not booted in UEFI mode'
 	fi
 }
 
 verify_network_connectivity() {
-	ping -c1 archlinux.org
+	ping -c1 archlinux.org >/dev/null
 	if [[ $? != 0 ]]
 	then
 		die 'no network connectivity'
@@ -16,8 +15,7 @@ verify_network_connectivity() {
 
 sync_clock() {
 	timedatectl set-ntp true
-	timedatectl status | grep 'synchronized.*yes'
-	if [[ $? != 0 ]]
+	if timedatectl status | grep 'synchronized.*no' >/dev/null
 	then
 		die 'clock not in sync'
 	fi
