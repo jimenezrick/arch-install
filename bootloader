@@ -10,4 +10,9 @@ title          Arch Linux
 linux          /vmlinuz-linux
 initrd         /initramfs-linux.img
 options        root=PARTUUID=14420948-2cea-4de7-b042-40f67c618660 rw rootflags=subvol=@
-               rd.luks.options=discard
+
+               luks.uuid=MYUUID
+	       luks.name=MYUUID=cryptroot
+               luks.options=discard ?
+
+	       # https://wiki.archlinux.org/index.php/Dm-crypt/System_configuration#Using_sd-encrypt_hook

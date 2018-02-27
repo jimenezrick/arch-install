@@ -1,0 +1,5 @@
+DISK_MODEL='Samsung SSD 850'
+ZONEINFO='Europe/London'
+LOCALE='en_US'
+KEYMAP='us'
+HOSTNAME='viper.local'

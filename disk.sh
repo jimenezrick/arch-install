@@ -2,22 +2,13 @@
 
 set -euo pipefail
 
-die() {
-	echo "Error: $*" >&2
-	exit 1
-}
-
-announce() {
-	echo "==> $*"
-}
-
 find_disk_dev() {
 	local model=$1
 	local dev=$(lsblk -S -o kname,model | awk "/$model/"'{print $1}')
 
 	if mount | grep /dev/$dev >/dev/null
 	then
-		die "disk is mounted"
+		die 'disk is mounted'
 	fi
 	echo $dev
 }
@@ -46,12 +37,15 @@ prepare_disk() {
 	announce Preparing rootfs subvolumes $dev_rootfs
 	mount /dev/mapper/cryptroot /mnt
 	btrfs subvolume create /mnt/@
+	btrfs subvolume create /mnt/@etc
 	btrfs subvolume create /mnt/@home
 	btrfs subvolume create /mnt/@snapshots
 	umount /mnt
 
 	mount -o subvol=@ /dev/mapper/cryptroot /mnt
-	mkdir /mnt/home /mnt/.snapshots
+	mkdir /mnt/boot /mnt/etc /mnt/home /mnt/.snapshots
+	mount $dev_esp /mnt/boot
+	mount -o subvol=@etc /dev/mapper/cryptroot /mnt/etc
 	mount -o subvol=@home /dev/mapper/cryptroot /mnt/home
 	mount -o subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
 }
@@ -62,6 +56,11 @@ install_bootloader() {
 	announce Installing bootloader on $dev_esp
 	mkdir /mnt/boot
 	mount $dev_esp /mnt/boot
+
+	HOOKS='(base systemd autodetect keyboard sd-vconsole modconf block sd-encrypt filesystems fsck)'
+	sed -i "s/^HOOKS=.*/HOOKS=$HOOKS/" /etc/mkinitcpio.conf
+	mkinitcpio -p linux
+	mkinitcpio -p linux-lts
 
 	bootctl install
 }
