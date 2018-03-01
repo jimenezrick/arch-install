@@ -1,0 +1,4 @@
+My BIOS settings:
+- Enable UEFI boot
+- Enable IOMMU
+- Enable power on with memory
