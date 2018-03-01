@@ -22,17 +22,18 @@ sync_clock() {
 }
 
 install_arch() {
-	announce Installing Arch...
+	announce Installing Arch
 	pacstrap /mnt base
 	# TODO: btrfs-progs, my groups and pkgs
 
 	# Customize /etc? fstab...
 	genfstab -U /mnt >> /mnt/etc/fstab
 
-	announce Configuring chroot Arch...
+	announce Configuring chroot Arch
 	cp -v install_chroot.sh /mnt/install_chroot.sh
 	arch-chroot /mnt /install_chroot.sh
 	rm /mnt/install_chroot.sh
 
 	umount -R /mnt
+	announce Done
 }
