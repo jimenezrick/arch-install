@@ -16,11 +16,11 @@ source $CWD/disk.sh
 source $CWD/install.sh
 source $CWD/config.sh
 
-DISK_DEV=/dev/$(find_disk_dev "$DISK_MODEL")
-
 verify_uefi_boot
 verify_network_connectivity
 sync_clock
+
+DISK_DEV=/dev/$(find_disk_dev "$DISK_MODEL")
 
 #prepare_disk $DISK_DEV
 #install_arch

@@ -28,18 +28,11 @@ install_arch() {
 
 	# Customize /etc? fstab...
 	genfstab -U /mnt >> /mnt/etc/fstab
-	arch-chroot /mnt
 
-	ln -sf /usr/share/zoneinfo/$ZONEINFO /etc/localtime
-	hwclock --systohc
+	announce Configuring chroot Arch...
+	cp -v install_chroot.sh /mnt/install_chroot.sh
+	arch-chroot /mnt /install_chroot.sh
+	rm /mnt/install_chroot.sh
 
-	sed -i "s/#${LOCALE}.UTF-8 UTF-8/${LOCALE}.UTF-8 UTF-8/" /etc/locale.gen
-	locale-gen
-	echo LANG=${LOCALE}.UTF-8 >/etc/locale.conf
-	echo KEYMAP=$KEYMAP >/etc/vconsole.conf
-	echo $HOSTNAME >/etc/hostname
-
-	passwd
-	exit # chroot
 	umount -R /mnt
 }
