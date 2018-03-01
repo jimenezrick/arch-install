@@ -26,7 +26,7 @@ install_arch() {
 	pacstrap /mnt base
 	# TODO: btrfs-progs, my groups and pkgs
 
-	# Customize /etc? fstab...
+	# TODO: Customize /etc? fstab...
 	genfstab -U /mnt >> /mnt/etc/fstab
 
 	announce Configuring chroot Arch
