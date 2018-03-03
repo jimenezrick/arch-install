@@ -1,0 +1,11 @@
+base
+base-devel
+gnome
+linux-tools
+qt
+qt5
+texlive-most
+xorg
+xorg-apps
+xorg-drivers
+xorg-fonts

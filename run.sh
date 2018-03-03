@@ -11,7 +11,7 @@ announce() {
 	echo "==> $*"
 }
 
-CWD=$(cd $(dirname $0); pwd)
+export CWD=$(cd $(dirname $0); pwd)
 source $CWD/disk.sh
 source $CWD/install.sh
 source $CWD/config.sh

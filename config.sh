@@ -4,5 +4,6 @@ export LOCALE='en_US'
 export KEYMAP='us'
 export HOSTNAME='viper.local'
 
-export INSTALL_PKGS=(vi)
-export INSTALL_GROUPS=(base-devel)
+export INSTALL_PKGS=($(cat $CWD/pkgs/explicit-pkgs.pacman))
+export INSTALL_GROUPS=($(cat $CWD/pkgs/groups-pkgs.pacman))
+export INSTALL_AUR=($(cat $CWD/pkgs/aur-pkgs.pacman))
