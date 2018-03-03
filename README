@@ -1,10 +1,12 @@
-Automated Arch Linux installation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ Automated Arch Linux installation
+===================================
 
 Boot Arch ISO, use these scripts, success!
 
 Steps:
-  1. Boot
-  2. wifi-menu
-  3. git clone https://github.com/jimenezrick/arch-install.git
-  4. arch-install/run.sh
+
+1. Boot
+2. wifi-menu
+3. vi /etc/pacman.d/mirrorlist
+4. curl -L https://github.com/jimenezrick/arch-install/archive/master.tar.gz | tar xfz -
+5. arch-install-master/run.sh
