@@ -24,8 +24,7 @@ sync_clock() {
 
 install_arch() {
 	announce Installing Arch
-	pacstrap /mnt base btrfs-progs
-	# TODO: my groups and pkgs
+	pacstrap /mnt base btrfs-progs ${INSTALL_PKGS[@]} ${INSTALL_GROUPS[@]}
 
 	# TODO: Customize /etc? fstab...
 	genfstab -U /mnt >> /mnt/etc/fstab

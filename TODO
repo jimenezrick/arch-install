@@ -1,3 +1,2 @@
 - Finish logic for setting up bootloader
-- Add config to install groups and pkgs
 - Add script to restore BTRFS subvolumes /etc /home...
