@@ -1,4 +1,4 @@
-My BIOS settings:
+My BIOS settings (press F2):
 - Enable UEFI boot
-- Enable IOMMU
-- Enable power on with memory
+- Enable IOMMU controller
+- Enable AC back on memory
