@@ -26,13 +26,14 @@ install_arch() {
 	announce Installing Arch
 	pacstrap /mnt base btrfs-progs ${INSTALL_PKGS[@]} ${INSTALL_GROUPS[@]}
 
-	# TODO: Customize /etc? fstab...
 	genfstab -U /mnt >> /mnt/etc/fstab
 
 	announce Configuring chroot Arch
-	cp -v install_chroot.sh /mnt/install_chroot.sh
+	cp -v $CWD/install_chroot.sh /mnt
+	cp -v $CWD/bootctl/loader.conf /mnt/boot/loader
+	cp -v $CWD/bootctl/arch.conf /mnt/boot/loader/entries
 	arch-chroot /mnt /install_chroot.sh
-	rm /mnt/install_chroot.sh
+	rm -v /mnt/install_chroot.sh
 
 	umount -R /mnt
 	cryptsetup close cryptroot

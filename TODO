@@ -1,3 +1,5 @@
-- Finish logic for setting up bootloader
+- Logic to generate dynamic bootloader config
+- Boot entry for fallback or lts?
+- Customize /etc: fstab?, crypttab? (Don't use genfstab? and copy a template?)
 - Add script to restore BTRFS subvolumes /etc /home...
 - Install AUR packages
