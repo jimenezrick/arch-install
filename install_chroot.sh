@@ -9,4 +9,10 @@ echo LANG=${LOCALE}.UTF-8 >/etc/locale.conf
 echo KEYMAP=$KEYMAP >/etc/vconsole.conf
 echo $HOSTNAME >/etc/hostname
 
+echo Enter root password:
 passwd
+
+HOOKS='(base systemd autodetect keyboard sd-vconsole modconf block sd-encrypt filesystems fsck)'
+sed -i "s/^HOOKS=.*/HOOKS=$HOOKS/" /etc/mkinitcpio.conf
+mkinitcpio -p linux
+bootctl install

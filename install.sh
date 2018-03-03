@@ -15,6 +15,7 @@ verify_network_connectivity() {
 
 sync_clock() {
 	timedatectl set-ntp true
+	sleep 2
 	if timedatectl status | grep 'synchronized.*no' >/dev/null
 	then
 		die 'clock not in sync'
@@ -23,8 +24,8 @@ sync_clock() {
 
 install_arch() {
 	announce Installing Arch
-	pacstrap /mnt base
-	# TODO: btrfs-progs, my groups and pkgs
+	pacstrap /mnt base btrfs-progs
+	# TODO: my groups and pkgs
 
 	# TODO: Customize /etc? fstab...
 	genfstab -U /mnt >> /mnt/etc/fstab
@@ -35,5 +36,6 @@ install_arch() {
 	rm /mnt/install_chroot.sh
 
 	umount -R /mnt
+	cryptsetup close cryptroot
 	announce Done
 }

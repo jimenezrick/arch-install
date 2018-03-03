@@ -51,18 +51,3 @@ prepare_disk() {
 	mount -o subvol=@home /dev/mapper/cryptroot /mnt/home
 	mount -o subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
 }
-
-install_bootloader() {
-	local dev_esp=${1}1
-
-	announce Installing bootloader on $dev_esp
-	mkdir /mnt/boot
-	mount $dev_esp /mnt/boot
-
-	HOOKS='(base systemd autodetect keyboard sd-vconsole modconf block sd-encrypt filesystems fsck)'
-	sed -i "s/^HOOKS=.*/HOOKS=$HOOKS/" /etc/mkinitcpio.conf
-	mkinitcpio -p linux
-	mkinitcpio -p linux-lts
-
-	bootctl install
-}
