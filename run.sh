@@ -21,6 +21,8 @@ verify_network_connectivity
 sync_clock
 
 DISK_DEV=/dev/$(find_disk_dev "$DISK_MODEL")
-
 prepare_disk $DISK_DEV
+
+announce Overriding Pacman mirrorlist
+cp -v $CWD/mirrorlist /etc/pacman.d
 install_arch
