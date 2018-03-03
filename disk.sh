@@ -1,5 +1,11 @@
 find_disk_dev() {
 	local model=$1
+
+	if [[ $(lsblk -S -o kname,model | grep "$model" | wc -l) != 1 ]]
+	then
+		die 'could not identify an unique disk'
+	fi
+
 	local dev=$(lsblk -S -o kname,model | awk "/$model/"'{print $1}')
 
 	if mount | grep /dev/$dev >/dev/null
