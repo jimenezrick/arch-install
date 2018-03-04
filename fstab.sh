@@ -1,3 +1,8 @@
+#!/bin/bash
+
+set -euo pipefail
+
+cat <<EOF
 # Samsung SSD 850 PRO
 UUID=${1}					/boot	vfat	defaults	0 2
 UUID=${2}	/         	btrfs	subvol=@	0 0
@@ -14,3 +19,4 @@ UUID=b6a1620d-c833-47d0-8ca3-2454088eaad0 /mnt/scratch btrfs  user,noauto,exec  
 
 # Seagate HDD
 UUID=d958cd76-7bdd-4245-9666-5046e2a99f06 /mnt/garage  btrfs  user,noauto                         0      0
+EOF
