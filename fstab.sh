@@ -6,7 +6,6 @@ cat <<EOF
 # Samsung SSD 850 PRO
 UUID=${1}					/boot	vfat	defaults			0 2
 UUID=${2}	/         	btrfs	subvol=@		0 0
-UUID=${2}	/etc      	btrfs	subvol=@etc		0 0
 UUID=${2}	/home     	btrfs	subvol=@home		0 0
 UUID=${2}	/.snapshots	btrfs	subvol=@snapshots	0 0
 

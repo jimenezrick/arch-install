@@ -39,15 +39,13 @@ prepare_disk() {
 	announce Preparing rootfs subvolumes $dev_rootfs
 	mount /dev/mapper/cryptroot /mnt
 	btrfs subvolume create /mnt/@
-	btrfs subvolume create /mnt/@etc
 	btrfs subvolume create /mnt/@home
 	btrfs subvolume create /mnt/@snapshots
 	umount /mnt
 
 	mount -o subvol=@ /dev/mapper/cryptroot /mnt
-	mkdir /mnt/boot /mnt/etc /mnt/home /mnt/.snapshots
+	mkdir /mnt/boot /mnt/home /mnt/.snapshots
 	mount $dev_esp /mnt/boot
-	mount -o subvol=@etc /dev/mapper/cryptroot /mnt/etc
 	mount -o subvol=@home /dev/mapper/cryptroot /mnt/home
 	mount -o subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
 }
