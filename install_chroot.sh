@@ -12,7 +12,8 @@ echo $HOSTNAME >/etc/hostname
 echo Enter root password:
 passwd
 
-HOOKS='(base systemd autodetect keyboard sd-vconsole modconf block sd-encrypt filesystems fsck)'
+# Shutdown error: https://github.com/systemd/systemd/issues/8155
+HOOKS='(base systemd autodetect keyboard sd-vconsole modconf block sd-encrypt filesystems fsck sd-shutdown)'
 sed -i "s/^HOOKS=.*/HOOKS=$HOOKS/" /etc/mkinitcpio.conf
 mkinitcpio -p linux
 mkinitcpio -p linux-lts
