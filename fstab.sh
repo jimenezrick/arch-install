@@ -4,10 +4,10 @@ set -euo pipefail
 
 cat <<EOF
 # Samsung SSD 850 PRO
-UUID=${1}					/boot	vfat	defaults			0 2
-UUID=${2}	/         	btrfs	subvol=@		0 0
-UUID=${2}	/home     	btrfs	subvol=@home		0 0
-UUID=${2}	/.snapshots	btrfs	subvol=@snapshots	0 0
+UUID=${1}		/boot		vfat		defaults			0 2
+/dev/mapper/cryptroot	/		btrfs		subvol=@			0 0
+/dev/mapper/cryptroot	/home     	btrfs		subvol=@home			0 0
+/dev/mapper/cryptroot	/.snapshots	btrfs		subvol=@snapshots		0 0
 
 # Samsung SSD 840 EVO
 #UUID=6ddce1dc-4933-4178-b53e-4b06c7875c55 /            ext4   defaults                            0      1

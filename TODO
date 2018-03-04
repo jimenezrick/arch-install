@@ -1,2 +1,2 @@
-- Add script to restore BTRFS subvolumes /etc /home...
+- Restore script for /home and /etc
 - Install AUR packages
