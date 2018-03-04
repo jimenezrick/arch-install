@@ -24,6 +24,7 @@ sync_clock() {
 
 install_arch() {
 	announce Installing Arch
+	cp -v $CWD/mirrorlist /etc/pacman.d
 	pacstrap /mnt base btrfs-progs ${INSTALL_PKGS[@]} ${INSTALL_GROUPS[@]}
 
 	genfstab -U /mnt >> /mnt/etc/fstab
