@@ -23,7 +23,9 @@ sync_clock() {
 }
 
 install_arch() {
+	local dev_esp=${1}1
 	local dev_rootfs=${1}2
+	local esp_uuid=$(lsblk -n -o UUID $dev_esp)
 	local rootfs_uuid=$(lsblk -n -o UUID $dev_rootfs)
 
 	announce Installing Arch
@@ -31,7 +33,7 @@ install_arch() {
 	pacstrap /mnt base btrfs-progs ${INSTALL_PKGS[@]} ${INSTALL_GROUPS[@]}
 
 	announce Configuring chroot Arch
-	genfstab -U /mnt >> /mnt/etc/fstab
+	$CWD/fstab.sh $esp_uuid $rootfs_uuid >>/mnt/etc/fstab
 
 	cp -v $CWD/bootctl/loader.conf /mnt/boot/loader
 	$CWD/bootctl/arch.conf.sh $rootfs_uuid >/mnt/boot/loader/entries/arch.conf
