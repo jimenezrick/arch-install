@@ -73,7 +73,6 @@ hwinfo
 iftop
 inetutils
 inotify-tools
-intellij-idea-community-edition
 iotop
 iproute2
 iptables
@@ -162,7 +161,6 @@ subversion
 sudo
 surf
 sysfsutils
-syslinux
 sysstat
 systemd
 systemd-sysvcompat
@@ -171,7 +169,6 @@ tar
 tcpdump
 terminus-font
 texinfo
-texlive-latexextra
 tig
 tk
 tmux
