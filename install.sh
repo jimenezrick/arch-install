@@ -42,8 +42,4 @@ install_arch() {
 	cp -v $CWD/bootctl/loader.conf /mnt/boot/loader/
 	$CWD/bootctl/arch.conf.sh $rootfs_uuid >/mnt/boot/loader/entries/arch.conf
 	$CWD/bootctl/arch-lts.conf.sh $rootfs_uuid >/mnt/boot/loader/entries/arch-lts.conf
-
-	umount -R /mnt
-	cryptsetup close cryptroot
-	announce Done
 }

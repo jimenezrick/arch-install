@@ -24,3 +24,10 @@ DISK_DEV=/dev/$(find_disk_dev "$DISK_MODEL")
 
 prepare_disk $DISK_DEV
 install_arch $DISK_DEV
+
+mkdir /mnt/mnt/{garage,scratch,usb}
+
+umount -R /mnt
+cryptsetup close cryptroot
+
+announce Done
