@@ -23,16 +23,21 @@ sync_clock() {
 }
 
 install_arch() {
+	local dev_rootfs=${1}2
+	local rootfs_uuid=$(lsblk -n -o UUID $dev_rootfs)
+
 	announce Installing Arch
 	cp -v $CWD/mirrorlist /etc/pacman.d
 	pacstrap /mnt base btrfs-progs ${INSTALL_PKGS[@]} ${INSTALL_GROUPS[@]}
 
+	announce Configuring chroot Arch
 	genfstab -U /mnt >> /mnt/etc/fstab
 
-	announce Configuring chroot Arch
-	cp -v $CWD/install_chroot.sh /mnt
 	cp -v $CWD/bootctl/loader.conf /mnt/boot/loader
-	cp -v $CWD/bootctl/arch.conf /mnt/boot/loader/entries
+	$CWD/bootctl/arch.conf.sh $rootfs_uuid >/mnt/boot/loader/entries/arch.conf
+	$CWD/bootctl/arch-lts.conf.sh $rootfs_uuid >/mnt/boot/loader/entries/arch-lts.conf
+
+	cp -v $CWD/install_chroot.sh /mnt
 	arch-chroot /mnt /install_chroot.sh
 	rm -v /mnt/install_chroot.sh
 
