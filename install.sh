@@ -29,19 +29,19 @@ install_arch() {
 	local rootfs_uuid=$(lsblk -n -o UUID $dev_rootfs)
 
 	announce Installing Arch
-	cp -v $CWD/mirrorlist /etc/pacman.d
+	cp -v $CWD/mirrorlist /etc/pacman.d/
 	pacstrap /mnt base btrfs-progs ${INSTALL_PKGS[@]} ${INSTALL_GROUPS[@]}
 
 	announce Configuring chroot Arch
 	$CWD/fstab.sh $esp_uuid $rootfs_uuid >>/mnt/etc/fstab
 
-	cp -v $CWD/bootctl/loader.conf /mnt/boot/loader
-	$CWD/bootctl/arch.conf.sh $rootfs_uuid >/mnt/boot/loader/entries/arch.conf
-	$CWD/bootctl/arch-lts.conf.sh $rootfs_uuid >/mnt/boot/loader/entries/arch-lts.conf
-
-	cp -v $CWD/install_chroot.sh /mnt
+	cp -v $CWD/install_chroot.sh /mnt/
 	arch-chroot /mnt /install_chroot.sh
 	rm -v /mnt/install_chroot.sh
+
+	cp -v $CWD/bootctl/loader.conf /mnt/boot/loader/
+	$CWD/bootctl/arch.conf.sh $rootfs_uuid >/mnt/boot/loader/entries/arch.conf
+	$CWD/bootctl/arch-lts.conf.sh $rootfs_uuid >/mnt/boot/loader/entries/arch-lts.conf
 
 	umount -R /mnt
 	cryptsetup close cryptroot
