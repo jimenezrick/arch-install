@@ -16,18 +16,20 @@ source $CWD/disk.sh
 source $CWD/install.sh
 source $CWD/config.sh
 
-verify_uefi_boot
-verify_network_connectivity
-sync_clock
+(
+	verify_uefi_boot
+	verify_network_connectivity
+	sync_clock
 
-DISK_DEV=/dev/$(find_disk_dev "$DISK_MODEL")
+	DISK_DEV=/dev/$(find_disk_dev "$DISK_MODEL")
 
-prepare_disk $DISK_DEV
-install_arch $DISK_DEV
+	prepare_disk $DISK_DEV
+	install_arch $DISK_DEV
 
-mkdir /mnt/mnt/{garage,scratch,usb}
+	mkdir /mnt/mnt/{garage,scratch,usb}
 
-umount -R /mnt
-cryptsetup close cryptroot
+	umount -R /mnt
+	cryptsetup close cryptroot
 
-announce Done
+	announce Done
+) |& tee arch-install.log
