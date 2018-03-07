@@ -27,9 +27,5 @@ source $CWD/config.sh
 	install_arch $DISK_DEV
 
 	mkdir /mnt/mnt/{garage,scratch,usb}
-
-	umount -R /mnt
-	cryptsetup close cryptroot
-
 	announce Done
 ) |& tee arch-install.log
