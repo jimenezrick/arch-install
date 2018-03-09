@@ -49,8 +49,3 @@ prepare_disk() {
 	mount -o subvol=@home /dev/mapper/cryptroot /mnt/home
 	mount -o subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
 }
-
-umount_all() {
-	umount -R /mnt
-	cryptsetup close cryptroot
-}
