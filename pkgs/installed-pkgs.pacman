@@ -85,6 +85,8 @@ double-conversion 3.0.0-1
 dri2proto 2.8-2
 dri3proto 1.0-1
 e2fsprogs 1.43.8-1
+efibootmgr 15-1
+efivar 32-1
 elfutils 0.170-1
 enchant 2.1.2-3
 ethtool 1:4.13-1

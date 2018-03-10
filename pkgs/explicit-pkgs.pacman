@@ -35,6 +35,7 @@ docker-compose
 dos2unix
 dosfstools
 e2fsprogs
+efibootmgr
 ethtool
 evince
 exim
