@@ -29,6 +29,7 @@ dash
 debootstrap
 device-mapper
 devtools
+dhcpcd
 diffutils
 docker
 docker-compose
@@ -82,8 +83,6 @@ ipython
 irssi
 isync
 iw
-jdk7-openjdk
-jdk8-openjdk
 jfsutils
 jq
 jupyter-notebook
@@ -98,6 +97,7 @@ linux-headers
 linux-lts
 linux-lts-headers
 linux-manpages
+logrotate
 lsb-release
 lshw
 lsof
@@ -118,9 +118,9 @@ msmtp
 mtr
 mutt
 nano
+netctl
 nftables
 nmap
-nodejs
 nss-mdns
 nvidia
 openbsd-netcat

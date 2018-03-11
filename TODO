@@ -1,2 +1,3 @@
-- Install AUR packages
-- Restore /usr/local: dwm, dmenu and hidcur
+Still manual steps:
+- Install AUR packages: use cower
+- Restore /usr/local: install dwm, dmenu and hidcur
