@@ -9,9 +9,6 @@ echo LANG=${LOCALE}.UTF-8 >/etc/locale.conf
 echo KEYMAP=$KEYMAP >/etc/vconsole.conf
 echo $HOSTNAME >/etc/hostname
 
-echo Enter root password:
-passwd
-
 # Shutdown error: https://github.com/systemd/systemd/issues/8155
 HOOKS='(base systemd autodetect keyboard sd-vconsole modconf block sd-encrypt filesystems fsck sd-shutdown)'
 sed -i "s/^HOOKS=.*/HOOKS=$HOOKS/" /etc/mkinitcpio.conf

@@ -1,1 +1,2 @@
 - Implement extra/restore_etc_home_subvols.sh
+- /etc should be a subvol nested under root, used for restore.
