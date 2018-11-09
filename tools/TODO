@@ -1,0 +1,2 @@
+- Use mkosi.patch? Maybe ssh keyring needs to be there, or gpg user
+  session running?

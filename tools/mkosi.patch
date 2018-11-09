@@ -1,0 +1,15 @@
+diff --git a/mkosi b/mkosi
+index d0a0e87..b337d04 100755
+--- a/mkosi
++++ b/mkosi
+@@ -1536,8 +1536,8 @@ SigLevel    = Required DatabaseOptional
+     keyring = "archlinux"
+     if platform.machine() == "aarch64":
+         keyring += "arm"
+-    run_pacman_key(["--init"])
+-    run_pacman_key(["--populate", keyring])
++    #run_pacman_key(["--init"])
++    #run_pacman_key(["--populate", keyring])
+ 
+     run_pacman(["-Sy"])
+     # determine base packages list from base group
