@@ -2,7 +2,7 @@
 Distribution=arch
 
 [Output]
-Format=gpt_squashfs
+Format=gpt_ext4
 Bootable=yes
 
 [Packages]
@@ -11,4 +11,5 @@ Packages=
 	git
 
 [Partitions]
-RootSize = 5368709120 # 5GiB
+# 2GiB
+RootSize = 2147483648
