@@ -1,31 +1,29 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Main where
 
-import Prelude (putStrLn)
-
-import RIO hiding (lines, threadDelay)
-import RIO.ByteString.Lazy (toStrict)
+import RIO hiding (threadDelay)
 import RIO.Directory
-import RIO.List.Partial (head)
-import RIO.Prelude.Simple
 import RIO.Process
-import RIO.Text (Text, lines, pack)
 
+import Data.String.Conversions (cs)
 import Data.String.Interpolate
+import Labels
 import System.Exit (exitFailure)
 import System.Posix.User (getEffectiveUserID)
 import Time.Units (Second, Time(..), threadDelay)
 
-import qualified Data.Attoparsec.Combinator as A
-import qualified Data.Attoparsec.Text as A
-import qualified Data.Either
-
-type App = RIO SimpleApp
+import Command
+import Match
 
 main :: IO ()
 main = runSimpleApp (doPreInstallChecks >> installArch device)
@@ -39,7 +37,7 @@ doPreInstallChecks = do
     isNetworkReady >>= exitIfNot (logError "network not ready")
     isClockSynced >>= exitIfNot (logError "clock not in sync")
   where
-    exitIfNot f b = unless b f >> liftIO exitFailure
+    exitIfNot f b = unless b f >> void (liftIO exitFailure)
 
 --
 -- Utilities
@@ -60,48 +58,41 @@ isClockSynced :: MonadIO m => m Bool
 isClockSynced = do
     runProcess_ "timedatectl set-ntp true"
     threadDelay (Time @Second 2)
-    readProcessStdout_ "timedatectl status" >>=
-        return . isJust . matchWordsAnyLine ["synchronized", "no"] . toText
-  where
-    toText = decodeUtf8Lenient . toStrict
-
---
--- Parsing
---
-matchWordsAnyLine :: [Text] -> Text -> Maybe Text
-matchWordsAnyLine words txt =
-    let matches = rights $ map (A.parseOnly (matchWords words)) $ lines txt
-     in case matches of
-            [] -> Nothing
-            m:_ -> Just m
-
-matchWords :: [Text] -> A.Parser Text
-matchWords words = mconcat <$> traverse (\w -> mappend <$> skipBefore w <*> A.string w) words
-
-skipBefore :: Text -> A.Parser Text
-skipBefore word = pack <$> (A.manyTill A.anyChar . A.lookAhead $ A.string word)
+    (not . null) . linesMatchingWords ["synchronized", "no"] . cs <$>
+        readProcessStdout_ "timedatectl status"
 
 --
 -- Installer
 --
 installArch :: (MonadIO m, MonadReader env m, HasLogFunc env) => Text -> m ()
 installArch device = do
-    let devEsp = [i|#{device}1|]
-    let devRootfs = [i|#{device}2|]
-    esp_uuid <- readCommandStdoutLine_ [i|lsblk -n -o UUID #{devEsp}|]
-    rootfs_uuid <- readCommandStdoutLine_ [i|lsblk -n -o UUID #{devRootfs}|]
+    devs <- pickInstallDevices device
     let cwd = "XXX" -- XXX
-        install_pkgs = ["caca", "pedo"] -- XXX
-        install_groups = ["caca", "pedo"] -- XXX
     logInfo "Installing Arch"
     runCommands_
         [ [i|cp -v #{cwd}/mirrorlist /etc/pacman.d/|]
         , [i|pacstrap /mnt base btrfs-progs ${install_pkgs[@]} ${install_groups[@]}|]
         ]
     logInfo "Configuring chroot Arch"
-    runCommand_ [i|#{cwd}/fstab.sh #{esp_uuid} #{rootfs_uuid} >>/mnt/etc/fstab|]
-  where
-    runCommands_ = sequence_ . map (runProcess_ . fromString)
-    runCommand_ c = runCommands_ [c]
-    readCommandStdoutLine_ c =
-        head . lines . decodeUtf8Lenient . toStrict <$> readProcessStdout_ (fromString c)
+    runCommand_ [i|#{cwd}/fstab.sh #{espUuid devs} #{rootfsUuid devs} >>/mnt/etc/fstab|]
+
+data InstallDevices = InstallDevices
+    { devEsp :: Text
+    , devRootfs :: Text
+    , espUuid :: Text
+    , rootfsUuid :: Text
+    }
+
+pickInstallDevices :: MonadIO m => Text -> m InstallDevices
+pickInstallDevices device = do
+    let devEsp = fromString [i|#{device}1|]
+        devRootfs = fromString [i|#{device}2|]
+    espUuid <- readCommandStdoutOneLine_ [i|lsblk -n -o UUID #{devEsp}|]
+    rootfsUuid <- readCommandStdoutOneLine_ [i|lsblk -n -o UUID #{devRootfs}|]
+    return InstallDevices {..}
+
+--
+-- XXX: Experiment
+--
+experiment :: Has "foo" value record => record -> value
+experiment = get #foo
