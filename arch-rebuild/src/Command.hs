@@ -1,5 +1,4 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE FlexibleContexts #-}
 
 module Command where
 
@@ -10,11 +9,11 @@ import RIO.Text (Text, lines)
 
 import Data.String.Conversions (cs)
 
-runCommands_ :: MonadIO m => [String] -> m ()
-runCommands_ = mapM_ (runProcess_ . fromString)
+runCmds_ :: MonadIO m => [String] -> m ()
+runCmds_ = mapM_ (runProcess_ . fromString)
 
-runCommand_ :: MonadIO m => String -> m ()
-runCommand_ c = runCommands_ [c]
+runCmd_ :: MonadIO m => String -> m ()
+runCmd_ c = runCmds_ [c]
 
-readCommandStdoutOneLine_ :: MonadIO m => String -> m Text
-readCommandStdoutOneLine_ c = head . lines . cs <$> readProcessStdout_ (fromString c)
+readCmdOneLine_ :: MonadIO m => String -> m Text
+readCmdOneLine_ c = head . lines . cs <$> readProcessStdout_ (fromString c)
