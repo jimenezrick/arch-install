@@ -10,12 +10,33 @@ import RIO
 import Dhall
 import Lens.Micro.Platform
 
+data FstabEntry
+    = DiskModel Text
+    | Device FilePath
+    deriving (Show, Generic)
+
+instance Interpret FstabEntry
+
+makeLenses ''FstabEntry
+
+data FstabConfig = FstabConfig
+    { fstanEntry :: FstabEntry
+    , mountPoint :: FilePath
+    , fsType :: Text
+    , fsOpts :: Text
+    , dump :: Natural
+    , fsck :: Natural
+    } deriving (Show, Generic)
+
+instance Interpret FstabConfig
+
 data SystemConfig = SystemConfig
-    { diskModel :: Text
-    , zoneinfo :: Text
+    { rootDiskModel :: Text
+    , zoneInfo :: Text
     , locale :: Text
     , keymap :: Text
     , hostname :: Text
+    , fstab :: FstabConfig
     , pacmanMirrorlist :: Text
     , pacmanPackageGroups :: [Text]
     , pacmanAurPackages :: [Text]
@@ -26,8 +47,8 @@ instance Interpret SystemConfig
 makeLenses ''SystemConfig
 
 data BootEntries = BootEntries
-    { name :: Text
-    , conf :: Text
+    { bootName :: Text
+    , bootConf :: Text
     } deriving (Show, Generic)
 
 instance Interpret BootEntries

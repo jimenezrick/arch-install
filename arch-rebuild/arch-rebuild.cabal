@@ -15,10 +15,11 @@ executable arch-rebuild
   hs-source-dirs:      src
   main-is:             Main.hs
   other-modules:       Config
+                     , Chroot
                      , Command
                      , Disk
-                     , Match
                      , Install
+                     , Match
   build-depends:       base ^>=4.12.0.0
                      , unix
                      , attoparsec
