@@ -10,36 +10,41 @@ import RIO
 import Dhall
 import Lens.Micro.Platform
 
-data FstabEntry
-    = DiskModel Text
-    | Device FilePath
+import qualified RIO.Text as T
+
+data FstabEntryType
+    = Disk { _model :: Text }
+    | Device { _path :: FilePath }
     deriving (Show, Generic)
+
+instance Interpret FstabEntryType
+
+makeLenses ''FstabEntryType
+
+data FstabEntry = FstabEntry
+    { _fsEntry :: FstabEntryType
+    , _fsMountPoint :: FilePath
+    , _fsType :: Text
+    , _fsOpts :: Text
+    , _fsDump :: Natural
+    , _fsck :: Natural
+    } deriving (Show, Generic)
 
 instance Interpret FstabEntry
 
 makeLenses ''FstabEntry
 
-data FstabConfig = FstabConfig
-    { fstanEntry :: FstabEntry
-    , mountPoint :: FilePath
-    , fsType :: Text
-    , fsOpts :: Text
-    , dump :: Natural
-    , fsck :: Natural
-    } deriving (Show, Generic)
-
-instance Interpret FstabConfig
-
 data SystemConfig = SystemConfig
-    { rootDiskModel :: Text
-    , zoneInfo :: Text
-    , locale :: Text
-    , keymap :: Text
-    , hostname :: Text
-    , fstab :: FstabConfig
-    , pacmanMirrorlist :: Text
-    , pacmanPackageGroups :: [Text]
-    , pacmanAurPackages :: [Text]
+    { _rootDiskModel :: Text
+    , _zoneInfo :: Text
+    , _locale :: Text
+    , _keymap :: Text
+    , _hostname :: Text
+    , _fstabEntries :: [FstabEntry]
+    , _pacmanMirrorlist :: Text
+    , _pacmanExplicitPackages :: [Text]
+    , _pacmanPackageGroups :: [Text]
+    , _pacmanAurPackages :: [Text]
     } deriving (Show, Generic)
 
 instance Interpret SystemConfig
@@ -47,8 +52,8 @@ instance Interpret SystemConfig
 makeLenses ''SystemConfig
 
 data BootEntries = BootEntries
-    { bootName :: Text
-    , bootConf :: Text
+    { _bootName :: Text
+    , _bootConf :: Text
     } deriving (Show, Generic)
 
 instance Interpret BootEntries
@@ -56,18 +61,21 @@ instance Interpret BootEntries
 makeLenses ''BootEntries
 
 data BootConfig = BootConfig
-    { loaderConf :: Text
-    , entries :: [BootEntries]
+    { _loaderConf :: Text
+    , _entries :: [BootEntries]
     } deriving (Show, Generic)
 
 instance Interpret BootConfig
 
 makeLenses ''BootConfig
 
+auto' :: Interpret a => Type a
+auto' = autoWith (defaultInterpretOptions {fieldModifier = T.dropWhile (== '_')})
+
 loadSystemConfig :: MonadIO m => FilePath -> m SystemConfig
-loadSystemConfig path = liftIO $ inputFile auto path
+loadSystemConfig path' = liftIO $ inputFile auto' path'
 
 loadBootConfig :: MonadIO m => Text -> Text -> FilePath -> m BootConfig
-loadBootConfig luksName luksUuid path = do
-    conf <- liftIO $ inputFile auto path
+loadBootConfig luksName luksUuid path' = do
+    conf <- liftIO $ inputFile auto' path'
     return $ conf luksName luksUuid

@@ -3,6 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Install where
 
@@ -10,7 +11,6 @@ import RIO hiding (threadDelay)
 import RIO.Directory
 import RIO.Process
 
-import Data.String.Conversions (cs)
 import Data.String.Interpolate
 import System.Exit (exitFailure)
 import System.Posix.User (getEffectiveUserID)
@@ -20,17 +20,17 @@ import Command
 import Disk
 import Match
 
-installArch :: (MonadIO m, MonadReader env m, HasLogFunc env) => Text -> m ()
+installArch :: (MonadIO m, MonadReader env m, HasLogFunc env) => FilePath -> m ()
 installArch device = do
-    devs <- getInstallDiskInfo device
-    let cwd = "XXX" -- XXX
+    InstallDiskInfo {..} <- getInstallDiskInfo device
+    let cwd = "XXX" :: String -- XXX
     logInfo "Installing Arch"
     runCmds_
         [ [i|cp -v #{cwd}/mirrorlist /etc/pacman.d/|]
         , [i|pacstrap /mnt base btrfs-progs ${install_pkgs[@]} ${install_groups[@]}|]
         ]
     logInfo "Configuring chroot Arch"
-    runCmd_ [i|#{cwd}/fstab.sh #{espUuid devs} #{rootfsUuid devs} >>/mnt/etc/fstab|]
+    runCmd_ [i|#{cwd}/fstab.sh #{uuidEsp} #{uuidRootfs} >>/mnt/etc/fstab|]
 
 doPreInstallChecks :: (MonadUnliftIO m, MonadReader env m, HasLogFunc env) => m ()
 doPreInstallChecks = do
@@ -57,5 +57,5 @@ isClockSynced :: MonadIO m => m Bool
 isClockSynced = do
     runProcess_ "timedatectl set-ntp true"
     threadDelay (Time @Second 2)
-    (not . null) . linesMatchingWords ["synchronized", "no"] . cs <$>
+    (not . null) . linesMatchingWords (["synchronized", "no"] :: [String]) <$>
         readProcessStdout_ "timedatectl status"

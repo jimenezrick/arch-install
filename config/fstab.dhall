@@ -1,16 +1,10 @@
-[
-  { fstabEntry = DiskModel "Samsung_SSD_840_EVO_250GB"
-  , mountPoint = "/boot"
+let FstabEntryType = < Disk : { model : Text } | Device : { path : Text } >
+in [
+  { fsEntry = FstabEntryType.Disk { model = "Samsung_SSD_840_EVO_250GB" }
+  , fsMountPoint = "/boot"
   , fsType = "vfat"
   , fsOpts = "defaults"
-  , dump = 0
+  , fsDump = 0
   , fsck = 2
   }
-] : List
-      { entry : < DiskModel : Text | Device : Text >
-      , mountPoint : Text
-      , fsType : Text
-      , fsOpts : Text
-      , dump : Natural
-      , fsck : Natural
-      }
+]
