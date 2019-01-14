@@ -10,7 +10,6 @@ import RIO.List.Partial (head)
 import RIO.Process
 import RIO.Text (Text, unpack, words)
 
-import Data.String.Conversions (cs)
 import Data.String.Interpolate
 
 import Command
@@ -25,8 +24,8 @@ data InstallDiskInfo = InstallDiskInfo
 
 getInstallDiskInfo :: MonadIO m => FilePath -> m InstallDiskInfo
 getInstallDiskInfo device = do
-    let devEsp = fromString [i|#{device}1|]
-        devRootfs = fromString [i|#{device}2|]
+    let devEsp = [i|#{device}1|]
+        devRootfs = [i|#{device}2|]
     uuidEsp <- getDevUuid devEsp
     uuidRootfs <- getDevUuid devRootfs
     return InstallDiskInfo {..}

@@ -11,7 +11,6 @@ import RIO hiding (threadDelay)
 import RIO.Directory
 import RIO.Process
 
-import Data.String.Conversions (cs)
 import Data.String.Interpolate
 import System.Exit (exitFailure)
 import System.Posix.User (getEffectiveUserID)
@@ -24,7 +23,7 @@ import Match
 installArch :: (MonadIO m, MonadReader env m, HasLogFunc env) => FilePath -> m ()
 installArch device = do
     InstallDiskInfo {..} <- getInstallDiskInfo device
-    let cwd = "XXX" -- XXX
+    let cwd = "XXX" :: String -- XXX
     logInfo "Installing Arch"
     runCmds_
         [ [i|cp -v #{cwd}/mirrorlist /etc/pacman.d/|]
