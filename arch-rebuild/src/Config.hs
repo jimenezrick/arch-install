@@ -62,7 +62,7 @@ makeLenses ''BootEntries
 
 data BootConfig = BootConfig
     { _loaderConf :: Text
-    , _entries :: [BootEntries]
+    , _bootEntries :: [BootEntries]
     } deriving (Show, Generic)
 
 instance Interpret BootConfig

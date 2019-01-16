@@ -6,6 +6,7 @@
 module Disk where
 
 import RIO hiding (words)
+import RIO.FilePath
 import RIO.List.Partial (head)
 import RIO.Process
 import RIO.Text (Text, unpack, words)
@@ -53,13 +54,15 @@ getDiskInfo model = do
 findDiskDevice :: MonadIO m => Text -> m (Either Text FilePath)
 findDiskDevice model = do
     disks <-
-        linesMatchingWords [model] <$> readProcessStdout_ "lsblk -n --nodeps --scsi -o kname,model"
+        linesMatchingExactWords [model] <$>
+        readProcessStdout_ "lsblk -n --nodeps --scsi -o kname,model"
     return $
         case disks of
-            [d] -> Right . unpack . head $ words d
+            [d] -> Right . ("/dev" </>) . unpack . head $ words d
             [] -> Left "disk not found"
             _ -> Left "could not uniquely identify the disk"
 
 isDiskMounted :: MonadIO m => FilePath -> m Bool
 isDiskMounted device =
-    not . null . linesMatchingWords [device] <$> readProcessStdout_ "findmnt -n --real -o source"
+    not . null . linesMatchingExactWords [device] <$>
+    readProcessStdout_ "findmnt -n --real -o source"

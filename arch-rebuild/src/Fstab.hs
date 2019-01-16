@@ -9,12 +9,23 @@ import RIO.Text (pack, unlines)
 import Data.String.Interpolate
 
 import Config
+import Disk
 
-renderFstab :: MonadIO m => [FstabEntry] -> m Text
-renderFstab = fmap (unlines . map pack . concat) . mapM renderDev
+renderFstab :: MonadIO m => [FstabEntry] -> m (Either Text Text)
+renderFstab entries = do
+    r <- sequence <$> mapM renderDev entries
+    return $ unlines . map pack . concat <$> r
   where
-    renderDev e
-        -- | (Disk model) <- e ^. fsEntry = [i|# #{model}|] [i|UUID=#{...}|]
-        | Device path <- e ^. fsEntry =
-            return
-                [[i|#{path} #{e^.fsMountPoint} #{e^.fsType} #{e^.fsOpts} #{e^.fsDump} #{e^.fsck}|]]
+    renderDev entry
+        | Disk model <- entry ^. fsEntry = do
+            info <- getDiskInfo model
+            let render d =
+                    [ [i|# #{model}|]
+                    , [i|UUID=#{uuid d} #{entry^.fsMountPoint} #{entry^.fsType} #{entry^.fsOpts} #{entry^.fsDump} #{entry^.fsck}|]
+                    ]
+            return $ render <$> info
+        | Device path <- entry ^. fsEntry = do
+            return $
+                Right
+                    [ [i|#{path} #{entry^.fsMountPoint} #{entry^.fsType} #{entry^.fsOpts} #{entry^.fsDump} #{entry^.fsck}|]
+                    ]

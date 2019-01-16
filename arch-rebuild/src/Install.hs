@@ -57,5 +57,5 @@ isClockSynced :: MonadIO m => m Bool
 isClockSynced = do
     runProcess_ "timedatectl set-ntp true"
     threadDelay (Time @Second 2)
-    (not . null) . linesMatchingWords (["synchronized", "no"] :: [String]) <$>
+    (1 ==) . length . linesMatchingExactWords (["synchronized:", "yes"] :: [String]) <$>
         readProcessStdout_ "timedatectl status"

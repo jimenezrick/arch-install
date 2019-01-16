@@ -1,6 +1,6 @@
 \(luksName : Text) -> \(luksUuid : Text) ->
 { loaderConf = ./systemd-boot/loader.conf as Text
-, entries    =
+, bootEntries =
     [ { bootName = "arch"
       , bootConf = ./systemd-boot/arch.conf.dhall luksName luksUuid
       }
