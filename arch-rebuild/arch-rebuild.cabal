@@ -25,10 +25,15 @@ executable arch-rebuild
                      , unix
                      , attoparsec
                      , optparse-generic
+                     , mtl
                      , rio
                      , interpolate
                      , dhall
                      , o-clock
                      , labels
-                     , microlens-platform
+                     , lens
+                     , lens-aeson
+                     , aeson
                      , string-conversions
+                     , uuid
+                     , errors

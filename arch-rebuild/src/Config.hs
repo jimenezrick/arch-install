@@ -7,8 +7,9 @@ module Config where
 
 import RIO
 
+import Control.Lens
+import Data.UUID (UUID, toText)
 import Dhall
-import Lens.Micro.Platform
 
 import qualified RIO.Text as T
 
@@ -75,7 +76,7 @@ auto' = autoWith (defaultInterpretOptions {fieldModifier = T.dropWhile (== '_')}
 loadSystemConfig :: MonadIO m => FilePath -> m SystemConfig
 loadSystemConfig path' = liftIO $ inputFile auto' path'
 
-loadBootConfig :: MonadIO m => Text -> Text -> FilePath -> m BootConfig
-loadBootConfig luksName luksUuid path' = do
+loadBootConfig :: MonadIO m => UUID -> FilePath -> m BootConfig
+loadBootConfig luksUuid path' = do
     conf <- liftIO $ inputFile auto' path'
-    return $ conf luksName luksUuid
+    return . conf $ toText luksUuid
