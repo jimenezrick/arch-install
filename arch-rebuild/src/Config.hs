@@ -1,6 +1,6 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Config where
@@ -15,6 +15,8 @@ import qualified RIO.Text as T
 
 data FstabEntryType
     = Disk { _model :: Text }
+    | Partition { _model :: Text
+                , _number :: Natural }
     | Device { _path :: FilePath }
     deriving (Show, Generic)
 

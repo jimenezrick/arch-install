@@ -3,6 +3,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Disk where
 
@@ -49,13 +50,13 @@ data DiskInfo
                , mounted :: Bool }
     | DiskWithPartitionsInfo { dev :: FilePath
                              , partitions :: [PartitionInfo] }
-    deriving (Show)
+    deriving (Show, Generic)
 
 data PartitionInfo = PartitionInfo
     { partDev :: FilePath
     , partUuid :: UUID
     , partMounted :: Bool
-    } deriving (Show)
+    } deriving (Show, Generic)
 
 getDiskInfo :: MonadIO m => Text -> ExceptT String m DiskInfo
 getDiskInfo model = do

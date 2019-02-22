@@ -7,7 +7,6 @@ license-file:        LICENSE
 author:              Ricardo Catalinas Jiménez
 maintainer:          r@untroubled.be
 category:            System
-extra-source-files:  CHANGELOG.md
 
 executable arch-rebuild
   default-language:    Haskell2010
@@ -33,6 +32,7 @@ executable arch-rebuild
                      , labels
                      , lens
                      , lens-aeson
+                     , generic-lens
                      , aeson
                      , string-conversions
                      , uuid
