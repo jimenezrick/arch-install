@@ -1,0 +1,2 @@
+- Configure network interface within qemu (ping doesn't work):
+  $ dhcpcd enp0s2 && curl www.google.com

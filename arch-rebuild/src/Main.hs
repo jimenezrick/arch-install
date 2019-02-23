@@ -1,34 +1,45 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE OverloadedLabels #-}
 
 module Main where
 
-import Prelude (putStrLn)
 import RIO
+import RIO.FilePath ((</>))
+import RIO.Text (pack)
 
+import Control.Monad.Except
 import Labels
 import Options.Generic
+import System.Environment (getProgName)
 
+import Config
 import Install
 
-newtype CmdOpts = Install
-    { confPath :: FilePath
-    } deriving (Generic)
+data CmdOpts
+    = Install { confPath :: FilePath }
+    | Other -- XXX
+    deriving (Generic)
 
-instance ParseRecord CmdOpts
+instance ParseRecord CmdOpts where
+    parseRecord = parseRecordWithModifiers $ lispCaseModifiers {shortNameModifier = firstLetter}
 
 main :: IO ()
 main = do
-    cmd <- getRecord "foo"
+    cmd <- pack <$> getProgName >>= getRecord
     case cmd of
-        Install confPath -> runSimpleApp (doPreInstallChecks >> installArch device)
-        _ -> putStrLn "Nothing to do here"
-  where
-    device = "/dev/sda" -- XXX
+        Install confPath -> do
+            sysConf <- loadSystemConfig $ confPath </> "system.dhall"
+            runSimpleApp $ do
+                doPreInstallChecks
+                r <- runExceptT $ installArch sysConf
+                case r of
+                    Left err -> logError $ fromString err
+                    Right () -> logInfo "Done"
+        _ -> undefined
 
 --
 -- XXX: Experiment

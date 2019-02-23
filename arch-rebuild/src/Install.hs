@@ -1,9 +1,8 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Install where
 
@@ -11,26 +10,27 @@ import RIO hiding (threadDelay)
 import RIO.Directory
 import RIO.Process
 
+import Control.Monad.Except
 import Data.String.Interpolate
+import Data.Text.IO (writeFile)
 import System.Exit (exitFailure)
 import System.Posix.User (getEffectiveUserID)
 import Time.Units (Second, Time(..), threadDelay)
 
 import Command
-import Disk
+import Config
+import Fstab
 import Match
 
-installArch :: (MonadIO m, MonadReader env m, HasLogFunc env) => FilePath -> m ()
-installArch device = do
-    InstallDiskInfo {..} <- getInstallDiskInfo device
-    let cwd = "XXX" :: String -- XXX
+installArch :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> ExceptT String m ()
+installArch sysConf = do
     logInfo "Installing Arch"
-    runCmds_
-        [ [i|cp -v #{cwd}/mirrorlist /etc/pacman.d/|]
-        , [i|pacstrap /mnt base btrfs-progs ${install_pkgs[@]} ${install_groups[@]}|]
-        ]
-    logInfo "Configuring chroot Arch"
-    runCmd_ [i|#{cwd}/fstab.sh #{uuidEsp} #{uuidRootfs} >>/mnt/etc/fstab|]
+    liftIO $ writeFile "/etc/pacman.d/mirrorlist" $ sysConf ^. pacmanMirrorlist
+    runCmd_
+        [i|pacstrap /mnt base btrfs-progs #{sysConf^.pacmanExplicitPackages} #{sysConf^.pacmanPackageGroups}|]
+    logInfo "Configuring Arch chroot"
+    fstab <- renderFstab $ sysConf ^. fstabEntries
+    liftIO $ writeFile "/mnt/etc/fstab" fstab
 
 doPreInstallChecks :: (MonadUnliftIO m, MonadReader env m, HasLogFunc env) => m ()
 doPreInstallChecks = do

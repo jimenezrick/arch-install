@@ -13,6 +13,7 @@ executable arch-rebuild
   ghc-options:         -Wall
   hs-source-dirs:      src
   main-is:             Main.hs
+
   other-modules:       Config
                      , Chroot
                      , Command
@@ -20,8 +21,10 @@ executable arch-rebuild
                      , Install
                      , Match
                      , Fstab
+
   build-depends:       base ^>=4.12.0.0
                      , unix
+                     , text
                      , attoparsec
                      , optparse-generic
                      , mtl
@@ -29,11 +32,11 @@ executable arch-rebuild
                      , interpolate
                      , dhall
                      , o-clock
-                     , labels
                      , lens
                      , lens-aeson
-                     , generic-lens
                      , aeson
                      , string-conversions
                      , uuid
                      , errors
+                     , generic-lens
+                     , labels
