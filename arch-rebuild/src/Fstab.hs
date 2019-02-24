@@ -17,7 +17,6 @@ import Data.String.Interpolate
 import Config
 import Disk
 
--- TODO: space between generated lines
 renderFstab :: MonadIO m => [FstabEntry] -> ExceptT String m Text
 renderFstab entries = unlines . map pack . concat <$> mapM renderDev entries
   where
