@@ -25,9 +25,9 @@ import Match
 installArch :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> ExceptT String m ()
 installArch sysConf = do
     logInfo "Installing Arch"
-    liftIO $ writeFile "/etc/pacman.d/mirrorlist" $ sysConf ^. pacmanMirrorlist
+    liftIO $ writeFile "/etc/pacman.d/mirrorlist" $ sysConf ^. pacman . mirrorlist
     runCmd_
-        [i|pacstrap /mnt base btrfs-progs #{sysConf^.pacmanExplicitPackages} #{sysConf^.pacmanPackageGroups}|]
+        [i|pacstrap /mnt base btrfs-progs #{sysConf^.pacman.explicitPackages} #{sysConf^.pacman.packageGroups}|]
     logInfo "Configuring Arch chroot"
     fstab <- renderFstab $ sysConf ^. fstabEntries
     liftIO $ writeFile "/mnt/etc/fstab" fstab

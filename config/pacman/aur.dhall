@@ -1,6 +1,1 @@
-[ "cower"
-, "gliv"
-, "metastore-git"
-, "mu-git"
-, "stack-bin"
-]
+[ "cower", "gliv", "metastore-git", "mu-git", "stack-bin" ]

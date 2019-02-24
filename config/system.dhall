@@ -1,12 +1,20 @@
-{ rootDiskModel = "Samsung SSD 850"
-, zoneInfo      = "Europe/London"
-, locale        = "en_US"
-, keymap        = "us"
-, hostname      = "viper.local"
-, fstabEntries  = ./fstab.dhall
+    let BlockDev = ./blockdev.dhall
 
-, pacmanMirrorlist       = ./pacman/mirrorlist as Text
-, pacmanExplicitPackages = ./pacman/explicit.dhall
-, pacmanPackageGroups    = ./pacman/groups.dhall
-, pacmanAurPackages      = ./pacman/aur.dhall
-}
+in  { hostname =
+        "viper.local"
+    , zoneInfo =
+        "Europe/London"
+    , locale =
+        "en_US"
+    , keymap =
+        "us"
+    , rootDiskModel =
+        "Samsung SSD 850" -- XXX: needed?
+    , fstabEntries =
+        ./fstab.dhall
+    , cryptroot =
+        BlockDev.Partition
+        { diskModel = "Samsung_SSD_840_EVO_250GB", partNum = 2 }
+    , pacman =
+        ./pacman.dhall
+    }

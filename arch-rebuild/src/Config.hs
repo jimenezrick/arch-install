@@ -37,17 +37,26 @@ instance Interpret FstabEntry
 
 makeLenses ''FstabEntry
 
+data PacmanConfig = PacmanConfig
+    { _mirrorlist :: Text
+    , _explicitPackages :: [Text]
+    , _packageGroups :: [Text]
+    , _aurPackages :: [Text]
+    } deriving (Show, Generic)
+
+instance Interpret PacmanConfig
+
+makeLenses ''PacmanConfig
+
 data SystemConfig = SystemConfig
-    { _rootDiskModel :: Text
+    { _hostname :: Text
     , _zoneInfo :: Text
     , _locale :: Text
     , _keymap :: Text
-    , _hostname :: Text
+    , _rootDiskModel :: Text
     , _fstabEntries :: [FstabEntry]
-    , _pacmanMirrorlist :: Text
-    , _pacmanExplicitPackages :: [Text]
-    , _pacmanPackageGroups :: [Text]
-    , _pacmanAurPackages :: [Text]
+    , _cryptroot :: BlockDev
+    , _pacman :: PacmanConfig
     } deriving (Show, Generic)
 
 instance Interpret SystemConfig
