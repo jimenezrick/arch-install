@@ -1,6 +1,6 @@
-let FstabEntryType = < Disk : { model : Text } | Partition : { model : Text, number : Natural } | Device : { path : Text } >
+let BlockDev = ./blockdev.dhall
 in [
-  { fsEntry = FstabEntryType.Partition { model = "Samsung_SSD_840_EVO_250GB", number = 1 }
+  { fsEntry = BlockDev.Partition { diskModel = "Samsung_SSD_840_EVO_250GB", partNum = 1 }
   , fsMountPoint = "/boot"
   , fsType = "vfat"
   , fsOpts = "defaults"

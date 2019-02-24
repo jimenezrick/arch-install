@@ -13,19 +13,19 @@ import Dhall
 
 import qualified RIO.Text as T
 
-data FstabEntryType
-    = Disk { _model :: Text }
-    | Partition { _model :: Text
-                , _number :: Natural }
-    | Device { _path :: FilePath }
+data BlockDev
+    = DevPath { _path :: FilePath }
+    | DiskModel { _model :: Text }
+    | Partition { _diskModel :: Text
+                , _partNum :: Natural }
     deriving (Show, Generic)
 
-instance Interpret FstabEntryType
+instance Interpret BlockDev
 
-makeLenses ''FstabEntryType
+makeLenses ''BlockDev
 
 data FstabEntry = FstabEntry
-    { _fsEntry :: FstabEntryType
+    { _fsEntry :: BlockDev
     , _fsMountPoint :: FilePath
     , _fsType :: Text
     , _fsOpts :: Text
