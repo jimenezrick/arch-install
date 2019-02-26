@@ -11,6 +11,7 @@ Packages=
 	curl
 	git
 	tmux
+	btrfs-progs
 
 [Partitions]
 # 2GiB
