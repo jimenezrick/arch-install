@@ -9,10 +9,11 @@ Bootable=yes
 Packages=
 	dhcpcd
 	curl
+	btrfs-progs
+	parted
 	git
 	tmux
-	btrfs-progs
 
 [Partitions]
-# 2GiB
+# 6GiB
 RootSize = 2147483648

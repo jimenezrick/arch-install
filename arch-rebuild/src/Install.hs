@@ -22,6 +22,32 @@ import Config
 import Fstab
 import Match
 
+buildRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> ExceptT String m ()
+buildRootfs dev = do
+    logInfo "Building Arch rootfs"
+    partitionDisk dev
+    --
+    -- TODO
+    --
+
+partitionDisk :: (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> ExceptT String m ()
+partitionDisk (DevPath path) = do
+    logInfo $ fromString [i|Partitioning device: #{path}|]
+    runCmd_
+        [i|parted -s #{path} -a optimal
+           mklabel gpt
+           mkpart primary 0% 513MiB
+           mkpart primary 513MiB 100%
+           set 1 boot on|]
+    logInfo $ fromString [i|Formatting ESP: #{espPath}|]
+    runCmd_ [i|mkfs.fat -F32 #{espPath}|]
+    logInfo $ fromString [i|Formatting rootfs partition: #{rootfsPath}|]
+    runCmd_ [i|mkfs.btrfs #{rootfsPath}|]
+  where
+    espPath = [i|#{path}/1|]
+    rootfsPath = [i|#{path}/2|]
+partitionDisk dev = throwError [i|unsopported block device: #{dev}|]
+
 installArch :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> ExceptT String m ()
 installArch sysConf = do
     logInfo "Installing Arch"
@@ -39,7 +65,7 @@ doPreInstallChecks = do
     isNetworkReady >>= exitIfNot (logError "network not ready")
     isClockSynced >>= exitIfNot (logError "clock not in sync")
   where
-    exitIfNot f b = unless b f >> void (liftIO exitFailure)
+    exitIfNot f b = unless b (f >> void (liftIO exitFailure))
 
 amIRoot :: MonadIO m => m Bool
 amIRoot = (== 0) <$> liftIO getEffectiveUserID

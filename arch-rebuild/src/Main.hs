@@ -9,10 +9,10 @@ module Main where
 
 import RIO
 import RIO.FilePath ((</>))
+import RIO.Process
 import RIO.Text (pack)
 
 import Control.Monad.Except
-import Labels
 import Options.Generic
 import System.Environment (getProgName)
 
@@ -21,28 +21,44 @@ import Install
 
 data CmdOpts
     = Install { confPath :: FilePath }
-    | Other -- XXX
+    | BuildRootfs { rootfsPath :: FilePath }
     deriving (Generic)
 
 instance ParseRecord CmdOpts where
     parseRecord = parseRecordWithModifiers $ lispCaseModifiers {shortNameModifier = firstLetter}
 
+data App = App
+    { saLogFunc :: !LogFunc
+    , saProcessContext :: !ProcessContext
+    }
+
+instance HasLogFunc App where
+    logFuncL = lens saLogFunc (\x y -> x {saLogFunc = y})
+
+instance HasProcessContext App where
+    processContextL = lens saProcessContext (\x y -> x {saProcessContext = y})
+
 main :: IO ()
 main = do
     cmd <- pack <$> getProgName >>= getRecord
-    case cmd of
-        Install confPath -> do
-            sysConf <- loadSystemConfig $ confPath </> "system.dhall"
-            runSimpleApp $ do
-                doPreInstallChecks
-                r <- runExceptT $ installArch sysConf
-                case r of
-                    Left err -> logError $ fromString err
-                    Right () -> logInfo "Done"
-        _ -> undefined
+    let run =
+            case cmd of
+                Install confPath -> do
+                    sysConf <- loadSystemConfig $ confPath </> "system.dhall"
+                    installArch sysConf
+                BuildRootfs rootfsPath -> buildRootfs $ DevPath rootfsPath
+    runApp $ do
+        doPreInstallChecks
+        r <- runExceptT run
+        case r of
+            Left err -> logError $ fromString err
+            Right () -> logInfo "Done"
 
---
--- XXX: Experiment
---
-experiment :: Has "foo" value record => record -> value
-experiment = get #foo
+runApp :: MonadIO m => RIO App a -> m a
+runApp m =
+    liftIO $ do
+        lo <- logOptionsHandle stderr True
+        pc <- mkDefaultProcessContext
+        withLogFunc lo $ \lf ->
+            let simpleApp = App {saLogFunc = lf, saProcessContext = pc}
+             in runRIO simpleApp m
