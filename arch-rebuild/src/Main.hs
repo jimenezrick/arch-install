@@ -4,6 +4,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Main where
 
@@ -12,9 +13,9 @@ import RIO.FilePath ((</>))
 import RIO.Process
 import RIO.Text (pack)
 
-import Control.Monad.Except
 import Options.Generic
 import System.Environment (getProgName)
+import System.Exit (exitFailure)
 
 import Config
 import Install
@@ -49,10 +50,8 @@ main = do
                 BuildRootfs rootfsPath -> buildRootfs $ DevPath rootfsPath
     runApp $ do
         doPreInstallChecks
-        r <- runExceptT run
-        case r of
-            Left err -> logError $ fromString err
-            Right () -> logInfo "Done"
+        catch run (\(ex :: SomeException) -> logError (displayShow ex) >> liftIO exitFailure)
+        logInfo "Done"
 
 runApp :: MonadIO m => RIO App a -> m a
 runApp m =

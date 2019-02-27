@@ -9,15 +9,14 @@ import RIO hiding ((^.), to, unlines)
 import RIO.Map (fromList)
 import RIO.Text (pack, unlines)
 
-import Control.Error ((??))
 import Control.Lens hiding ((??))
-import Control.Monad.Except
 import Data.String.Interpolate
 
 import Config
 import Disk
+import Error
 
-renderFstab :: MonadIO m => [FstabEntry] -> ExceptT String m Text
+renderFstab :: MonadIO m => [FstabEntry] -> m Text
 renderFstab entries = unlines . map pack . concat <$> mapM renderDev entries
   where
     renderDev entry =
@@ -25,7 +24,7 @@ renderFstab entries = unlines . map pack . concat <$> mapM renderDev entries
             DiskModel {_model} -> do
                 disk <- getDiskInfo _model
                 case disk of
-                    DiskWithPartitionsInfo {} -> throwError "expecting a disk without partitions"
+                    DiskWithPartitionsInfo {} -> throwString "expecting a disk without partitions"
                     DiskInfo {uuid} ->
                         return
                             [ [i|# #{_model}|]
@@ -34,13 +33,14 @@ renderFstab entries = unlines . map pack . concat <$> mapM renderDev entries
             Partition {_diskModel, _partNum} -> do
                 disk <- getDiskInfo _diskModel
                 case disk of
-                    DiskInfo {} -> throwError "expecting a disk with partitions"
+                    DiskInfo {} -> throwString "expecting a disk with partitions"
                     DiskWithPartitionsInfo {partitions} -> do
                         dev <- findDiskDevice _diskModel
                         uuid <-
-                            (fromList [(d, u) | (PartitionInfo d u _) <- partitions] ^.
-                             at [i|#{dev}#{_partNum}|]) ??
-                            "missing expected partition"
+                            throwNothing "missing expected partition" $
+                            return
+                                (fromList [(d, u) | (PartitionInfo d u _) <- partitions] ^.
+                                 at [i|#{dev}#{_partNum}|])
                         return
                             [ [i|# #{_diskModel}|]
                             , [i|UUID=#{uuid} #{entry^.fsMountPoint} #{entry^.fsType} #{entry^.fsOpts} #{entry^.fsDump} #{entry^.fsck}|]

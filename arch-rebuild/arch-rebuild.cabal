@@ -21,6 +21,7 @@ executable arch-rebuild
                      , Install
                      , Match
                      , Fstab
+                     , Error
 
   build-depends:       base ^>=4.12.0.0
                      , unix
@@ -37,6 +38,3 @@ executable arch-rebuild
                      , aeson
                      , string-conversions
                      , uuid
-                     , errors
-                     , generic-lens
-                     , labels

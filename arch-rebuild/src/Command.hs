@@ -13,7 +13,7 @@ runCmds_ :: MonadIO m => [String] -> m ()
 runCmds_ = mapM_ (runProcess_ . fromString)
 
 runCmd_ :: MonadIO m => String -> m ()
-runCmd_ c = runCmds_ [c]
+runCmd_ cmd = runCmds_ [cmd]
 
 readCmdOneLine_ :: MonadIO m => String -> m Text
-readCmdOneLine_ c = head . lines . cs <$> readProcessStdout_ (fromString c)
+readCmdOneLine_ cmd = head . lines . cs <$> readProcessStdout_ (fromString cmd)

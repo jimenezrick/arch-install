@@ -10,7 +10,6 @@ import RIO hiding (threadDelay)
 import RIO.Directory
 import RIO.Process
 
-import Control.Monad.Except
 import Data.String.Interpolate
 import Data.Text.IO (writeFile)
 import System.Exit (exitFailure)
@@ -22,7 +21,7 @@ import Config
 import Fstab
 import Match
 
-buildRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> ExceptT String m ()
+buildRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> m ()
 buildRootfs dev = do
     logInfo "Building Arch rootfs"
     partitionDisk dev
@@ -30,7 +29,7 @@ buildRootfs dev = do
     -- TODO
     --
 
-partitionDisk :: (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> ExceptT String m ()
+partitionDisk :: (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> m ()
 partitionDisk (DevPath path) = do
     logInfo $ fromString [i|Partitioning device: #{path}|]
     runCmd_
@@ -46,9 +45,9 @@ partitionDisk (DevPath path) = do
   where
     espPath = [i|#{path}/1|]
     rootfsPath = [i|#{path}/2|]
-partitionDisk dev = throwError [i|unsopported block device: #{dev}|]
+partitionDisk dev = throwString [i|unsopported block device: #{dev}|]
 
-installArch :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> ExceptT String m ()
+installArch :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
 installArch sysConf = do
     logInfo "Installing Arch"
     liftIO $ writeFile "/etc/pacman.d/mirrorlist" $ sysConf ^. pacman . mirrorlist
