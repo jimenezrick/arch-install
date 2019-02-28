@@ -18,7 +18,7 @@ import Time.Units (Second, Time(..), threadDelay)
 
 import Command
 import Config
-import Disk
+import Filesystem
 import Fstab
 import Match
 
@@ -36,7 +36,7 @@ buildRootfsImages espPath rootfsPath = do
     formatImgs
     mountImgs
     bootstrapArch
-    --umountImgs -- XXX
+    umountImgs
   where
     espMnt = "/mnt/esp"
     rootfsMnt = "/mnt/rootfs"
@@ -63,7 +63,9 @@ buildRootfsImages espPath rootfsPath = do
         --
         -- TODO
         --
-    --umountImgs = runCmds_ [[i|umount #{espMnt}], [i|umount #{rootfsMnt}|]]
+    umountImgs = do
+        umountPoint espMnt
+        umountPoint rootfsMnt
 
 partitionDisk :: (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> m ()
 partitionDisk (DevPath path) = do
