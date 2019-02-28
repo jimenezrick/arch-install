@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -euo pipefail
+
+enable_console() {
+	for e in /boot/loader/entries/*.conf
+	do
+		sed -i 's/\(^options.*rw$\)/\1 console=ttyS0/' $e
+	done
+}
+
+enable_console

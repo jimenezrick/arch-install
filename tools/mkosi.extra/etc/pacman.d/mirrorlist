@@ -1,0 +1,3 @@
+## Worldwide
+Server = http://mirrors.evowise.com/archlinux/$repo/os/$arch
+Server = http://mirror.rackspace.com/archlinux/$repo/os/$arch

@@ -23,6 +23,8 @@ import Install
 data CmdOpts
     = Install { confPath :: FilePath }
     | BuildRootfs { rootfsPath :: FilePath }
+    | BuildRootfsImages { espPath :: FilePath
+                        , rootfsPath :: FilePath }
     deriving (Generic)
 
 instance ParseRecord CmdOpts where
@@ -48,6 +50,7 @@ main = do
                     sysConf <- loadSystemConfig $ confPath </> "system.dhall"
                     installArch sysConf
                 BuildRootfs rootfsPath -> buildRootfs $ DevPath rootfsPath
+                BuildRootfsImages espPath rootfsPath -> buildRootfsImages espPath rootfsPath
     runApp $ do
         doPreInstallChecks
         catch run (\(ex :: SomeException) -> logError (displayShow ex) >> liftIO exitFailure)

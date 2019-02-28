@@ -18,6 +18,7 @@ import Data.String.Interpolate
 import Data.Text.Lens (_Text)
 import Data.UUID (UUID, fromText)
 
+import Command
 import Error
 
 data InstallDiskInfo = InstallDiskInfo
@@ -98,3 +99,9 @@ isDiskMounted device = do
         throwLeft $ eitherDecode' <$> readProcessStdout_ "findmnt --json --real -o source"
     return . not . null $ j ^?! key "filesystems" . _Array ^.. folded .
         filtered (\fs -> fs ^?! key "source" . _String . _Text == device)
+
+createZeroImage :: MonadIO m => FilePath -> Int -> m ()
+createZeroImage path sizeMegas = runCmd_ [i|dd if=/dev/zero of=#{path} bs=1M count=#{sizeMegas}|]
+
+mountLoopImage :: MonadIO m => FilePath -> FilePath -> m ()
+mountLoopImage imgPath mntPoint = runCmd_ [i|mount -o loop #{imgPath} #{mntPoint}|]

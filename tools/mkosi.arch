@@ -10,10 +10,14 @@ Packages=
 	dhcpcd
 	curl
 	btrfs-progs
+	dosfstools
 	parted
+	arch-install-scripts
+	vim
 	git
 	tmux
+	bash-completion
 
 [Partitions]
 # 6GiB
-RootSize = 2147483648
+RootSize = 6442450944

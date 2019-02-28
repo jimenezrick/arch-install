@@ -18,6 +18,7 @@ import Time.Units (Second, Time(..), threadDelay)
 
 import Command
 import Config
+import Disk
 import Fstab
 import Match
 
@@ -29,15 +30,49 @@ buildRootfs dev = do
     -- TODO
     --
 
+buildRootfsImages :: (MonadIO m, MonadReader env m, HasLogFunc env) => FilePath -> FilePath -> m ()
+buildRootfsImages espPath rootfsPath = do
+    createImgs
+    formatImgs
+    mountImgs
+    bootstrapArch
+    --umountImgs -- XXX
+  where
+    espMnt = "/mnt/esp"
+    rootfsMnt = "/mnt/rootfs"
+    createImgs = do
+        logInfo $ fromString [i|Creating ESP image: #{espPath}|]
+        createZeroImage espPath 512
+        logInfo $ fromString [i|Creating rootfs image: #{rootfsPath}|]
+        createZeroImage rootfsPath 2048
+    formatImgs = do
+        logInfo $ fromString [i|Formatting ESP: #{espPath}|]
+        runCmd_ [i|mkfs.fat -F32 #{espPath}|]
+        logInfo $ fromString [i|Formatting rootfs partition: #{rootfsPath}|]
+        runCmd_ [i|mkfs.btrfs #{rootfsPath}|]
+    mountImgs = do
+        createDirectoryIfMissing False espMnt
+        createDirectoryIfMissing False rootfsMnt
+        logInfo $ fromString [i|Mounting ESP on: #{espMnt}|]
+        mountLoopImage espPath espMnt
+        logInfo $ fromString [i|Mounting rootfs on: #{rootfsMnt}|]
+        mountLoopImage rootfsPath rootfsMnt
+    bootstrapArch = do
+        logInfo $ fromString [i|Bootstrapping Arch on: #{rootfsMnt}|]
+        runCmd_ [i|pacstrap #{rootfsMnt} base btrfs-progs|]
+        --
+        -- TODO
+        --
+    --umountImgs = runCmds_ [[i|umount #{espMnt}], [i|umount #{rootfsMnt}|]]
+
 partitionDisk :: (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> m ()
 partitionDisk (DevPath path) = do
     logInfo $ fromString [i|Partitioning device: #{path}|]
-    runCmd_
-        [i|parted -s #{path} -a optimal
-           mklabel gpt
-           mkpart primary 0% 513MiB
-           mkpart primary 513MiB 100%
-           set 1 boot on|]
+    runCmd_ $ [i|parted -s #{path} -a optimal|] ++
+        " mklabel gpt \
+        \ mkpart primary 0% 513MiB \
+        \ mkpart primary 513MiB 100% \
+        \ set 1 boot on"
     logInfo $ fromString [i|Formatting ESP: #{espPath}|]
     runCmd_ [i|mkfs.fat -F32 #{espPath}|]
     logInfo $ fromString [i|Formatting rootfs partition: #{rootfsPath}|]
