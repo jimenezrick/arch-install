@@ -16,3 +16,16 @@ Manual steps post-installation
    - dmenu
    - dwmstatus
 3. Install AUR packages using cower.
+
+New way
+=======
+
+From the host:
+  cd tools
+  PATH=$PATH:mkosi sudo ./build-img.sh
+  PATH=$PATH:mkosi sudo ./run-qemu.sh
+
+From QEMU:
+  /arch-rebuild-helpers/prepare.sh
+  cd /mnt/arch-rebuild/tools
+  ./arch-rebuild build-rootfs -c ../config

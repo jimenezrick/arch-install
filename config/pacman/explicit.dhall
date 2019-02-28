@@ -1,5 +1,4 @@
-[ "acbuild"
-, "alsa-utils"
+[ "alsa-utils"
 , "amd-ucode"
 , "asciinema"
 , "asp"

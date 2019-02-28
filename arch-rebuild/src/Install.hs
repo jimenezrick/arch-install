@@ -16,9 +16,6 @@ import Config
 import Filesystem
 import Fstab
 
---
--- TODO: Optimize img in VM and copy outside at the end?
---
 buildRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => InstallConfig -> m ()
 buildRootfs installConf = do
     createImgs
@@ -33,9 +30,9 @@ buildRootfs installConf = do
     rootfsPath = installConf ^. rootfsImage
     createImgs = do
         logInfo $ fromString [i|Creating ESP image: #{espPath}|]
-        createZeroImage espPath 512
+        createZeroImage espPath 1
         logInfo $ fromString [i|Creating rootfs image: #{rootfsPath}|]
-        createZeroImage rootfsPath 2048
+        createZeroImage rootfsPath 20
     formatImgs = do
         logInfo $ fromString [i|Formatting ESP: #{espPath}|]
         runCmd_ [i|mkfs.fat -F32 #{espPath}|]
@@ -52,8 +49,8 @@ buildRootfs installConf = do
         logInfo $ fromString [i|Bootstrapping Arch on: #{rootfsMnt}|]
         liftIO $ writeFile "/etc/pacman.d/mirrorlist" $ installConf ^. system . pacman . mirrorlist
         let packages = unwords $ installConf ^. system . pacman . explicitPackages
-            groups = unwords $installConf ^. system . pacman . packageGroups
-        runCmd_ [i|pacstrap #{rootfsMnt} base btrfs-progs #{packages} #{groups}|]
+            groups = unwords $ installConf ^. system . pacman . packageGroups
+        runCmd_ [i|pacstrap #{rootfsMnt} #{packages} #{groups}|]
     umountImgs = do
         umountPoint espMnt
         umountPoint rootfsMnt

@@ -66,7 +66,7 @@ data InstallConfig = InstallConfig
     { _system :: SystemConfig
     , _rootfsImage :: FilePath
     , _espImage :: FilePath
-    , _rootDisk :: Text
+    , _rootDisk :: BlockDev
     } deriving (Show, Generic)
 
 instance Interpret InstallConfig
