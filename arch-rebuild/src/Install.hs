@@ -15,16 +15,9 @@ import Config
 import Filesystem
 import Fstab
 
-buildRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> m ()
-buildRootfs dev = do
-    logInfo "Building Arch rootfs"
-    partitionDisk dev
-    --
-    -- TODO
-    --
-
-buildRootfsImages :: (MonadIO m, MonadReader env m, HasLogFunc env) => FilePath -> FilePath -> m ()
-buildRootfsImages espPath rootfsPath = do
+buildRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => InstallConfig -> m ()
+buildRootfs installConf = do
+    logInfo "Building Arch images"
     createImgs
     formatImgs
     mountImgs
@@ -33,6 +26,8 @@ buildRootfsImages espPath rootfsPath = do
   where
     espMnt = "/mnt/esp"
     rootfsMnt = "/mnt/rootfs"
+    espPath = installConf ^. espImage
+    rootfsPath = installConf ^. rootfsImage
     createImgs = do
         logInfo $ fromString [i|Creating ESP image: #{espPath}|]
         createZeroImage espPath 512
@@ -52,7 +47,7 @@ buildRootfsImages espPath rootfsPath = do
         mountLoopImage rootfsPath rootfsMnt
     bootstrapArch = do
         logInfo $ fromString [i|Bootstrapping Arch on: #{rootfsMnt}|]
-        runCmd_ [i|pacstrap #{rootfsMnt} base btrfs-progs|]
+        runCmd_ [i|pacstrap #{rootfsMnt} base btrfs-progs|] -- XXX
         --
         -- TODO
         --

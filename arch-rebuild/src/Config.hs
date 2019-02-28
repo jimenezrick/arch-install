@@ -24,16 +24,6 @@ instance Interpret BlockDev
 
 makeLenses ''BlockDev
 
-data InstallConfig = InstallConfig
-    { _rootfsImage :: FilePath
-    , _espImage :: FilePath
-    , _rootDisk :: Text
-    } deriving (Show, Generic)
-
-instance Interpret InstallConfig
-
-makeLenses ''InstallConfig
-
 data FstabEntry = FstabEntry
     { _fsEntry :: BlockDev
     , _fsMountPoint :: FilePath
@@ -71,6 +61,17 @@ data SystemConfig = SystemConfig
 instance Interpret SystemConfig
 
 makeLenses ''SystemConfig
+
+data InstallConfig = InstallConfig
+    { _system :: SystemConfig
+    , _rootfsImage :: FilePath
+    , _espImage :: FilePath
+    , _rootDisk :: Text
+    } deriving (Show, Generic)
+
+instance Interpret InstallConfig
+
+makeLenses ''InstallConfig
 
 data BootEntries = BootEntries
     { _bootName :: Text

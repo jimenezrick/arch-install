@@ -1,6 +1,8 @@
-    let BlockDev = ./blockdev.dhall
+    let BlockDev = ./blockdev.dhall 
 
-in  { rootfsImage =
+in  { system =
+        ./system.dhall 
+    , rootfsImage =
         "../imgs/rootfs.img"
     , espImage =
         "../imgs/esp.img"

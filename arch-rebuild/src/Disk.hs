@@ -18,7 +18,6 @@ import Data.String.Interpolate
 import Data.Text.Lens (_Text)
 import Data.UUID (UUID, fromText)
 
-import Command
 import Error
 
 data InstallDiskInfo = InstallDiskInfo
