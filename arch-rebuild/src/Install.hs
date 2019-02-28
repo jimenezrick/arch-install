@@ -21,7 +21,11 @@ buildRootfs installConf = do
     createImgs
     formatImgs
     mountImgs
+    -- TODO: create btrfs subvols
     bootstrapArch
+    -- TODO: render fstab
+    -- TODO: arch-chroot run settings
+    -- TODO: prepare bootloader
     umountImgs
   where
     espMnt = "/mnt/esp"
@@ -30,9 +34,9 @@ buildRootfs installConf = do
     rootfsPath = installConf ^. rootfsImage
     createImgs = do
         logInfo $ fromString [i|Creating ESP image: #{espPath}|]
-        createZeroImage espPath 1
+        createZeroImage espPath $ installConf ^. espImageSize
         logInfo $ fromString [i|Creating rootfs image: #{rootfsPath}|]
-        createZeroImage rootfsPath 20
+        createZeroImage rootfsPath $ installConf ^. rootfsImageSize
     formatImgs = do
         logInfo $ fromString [i|Formatting ESP: #{espPath}|]
         runCmd_ [i|mkfs.fat -F32 #{espPath}|]

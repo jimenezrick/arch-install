@@ -64,8 +64,10 @@ makeLenses ''SystemConfig
 
 data InstallConfig = InstallConfig
     { _system :: SystemConfig
-    , _rootfsImage :: FilePath
     , _espImage :: FilePath
+    , _rootfsImage :: FilePath
+    , _espImageSize :: Text
+    , _rootfsImageSize :: Text
     , _rootDisk :: BlockDev
     } deriving (Show, Generic)
 
