@@ -1,4 +1,0 @@
-To run a QEMU VM from the terminal:
-- Add `console=ttyS0' to the options section in
-  `/boot/loader/entries/...-4.20.12-arch.conf' on the VM.
-- Invoke QEMU with `-nographic'.
