@@ -15,6 +15,7 @@ executable arch-rebuild
   main-is:             Main.hs
 
   other-modules:       Config
+                     , Checks
                      , Chroot
                      , Command
                      , Disk

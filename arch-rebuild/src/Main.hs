@@ -17,6 +17,7 @@ import Options.Generic
 import System.Environment (getProgName)
 import System.Exit (exitFailure)
 
+import Checks
 import Config
 import Install
 

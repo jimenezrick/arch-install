@@ -24,6 +24,16 @@ instance Interpret BlockDev
 
 makeLenses ''BlockDev
 
+data InstallConfig = InstallConfig
+    { _rootfsImage :: FilePath
+    , _espImage :: FilePath
+    , _rootDisk :: Text
+    } deriving (Show, Generic)
+
+instance Interpret InstallConfig
+
+makeLenses ''InstallConfig
+
 data FstabEntry = FstabEntry
     { _fsEntry :: BlockDev
     , _fsMountPoint :: FilePath
@@ -53,7 +63,6 @@ data SystemConfig = SystemConfig
     , _zoneInfo :: Text
     , _locale :: Text
     , _keymap :: Text
-    , _rootDiskModel :: Text
     , _fstabEntries :: [FstabEntry]
     , _cryptroot :: BlockDev
     , _pacman :: PacmanConfig
@@ -83,6 +92,9 @@ makeLenses ''BootConfig
 
 auto' :: Interpret a => Type a
 auto' = autoWith (defaultInterpretOptions {fieldModifier = T.dropWhile (== '_')})
+
+loadInstallConfig :: MonadIO m => FilePath -> m InstallConfig
+loadInstallConfig path' = liftIO $ inputFile auto' path'
 
 loadSystemConfig :: MonadIO m => FilePath -> m SystemConfig
 loadSystemConfig path' = liftIO $ inputFile auto' path'
