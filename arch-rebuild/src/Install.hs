@@ -4,10 +4,11 @@
 
 module Install where
 
-import RIO hiding (threadDelay)
+import RIO hiding (threadDelay, unwords)
 import RIO.Directory
 
 import Data.String.Interpolate
+import Data.Text (unwords)
 import Data.Text.IO (writeFile)
 
 import Command
@@ -15,9 +16,11 @@ import Config
 import Filesystem
 import Fstab
 
+--
+-- TODO: Optimize img in VM and copy outside at the end?
+--
 buildRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => InstallConfig -> m ()
 buildRootfs installConf = do
-    logInfo "Building Arch images"
     createImgs
     formatImgs
     mountImgs
@@ -47,10 +50,10 @@ buildRootfs installConf = do
         mountLoopImage rootfsPath rootfsMnt
     bootstrapArch = do
         logInfo $ fromString [i|Bootstrapping Arch on: #{rootfsMnt}|]
-        runCmd_ [i|pacstrap #{rootfsMnt} base btrfs-progs|] -- XXX
-        --
-        -- TODO
-        --
+        liftIO $ writeFile "/etc/pacman.d/mirrorlist" $ installConf ^. system . pacman . mirrorlist
+        let packages = unwords $ installConf ^. system . pacman . explicitPackages
+            groups = unwords $installConf ^. system . pacman . packageGroups
+        runCmd_ [i|pacstrap #{rootfsMnt} base btrfs-progs #{packages} #{groups}|]
     umountImgs = do
         umountPoint espMnt
         umountPoint rootfsMnt
