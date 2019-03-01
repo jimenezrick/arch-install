@@ -1,7 +1,7 @@
-    let BlockDev = ./blockdev.dhall
+    let BlockDev = ./blockdev.dhall 
 
 in  { system =
-        ./system.dhall
+        ./system.dhall 
     , espImage =
         "../imgs/esp.img"
     , rootfsImage =
@@ -11,5 +11,5 @@ in  { system =
     , rootfsImageSize =
         "20G"
     , rootDisk =
-        BlockDev.DiskModel { model = "Samsung SSD 850 XXX XXX XXX" }
+        BlockDev.DiskModel { model = "Samsung_SSD_850_XXX_XXX_XXX" }
     }

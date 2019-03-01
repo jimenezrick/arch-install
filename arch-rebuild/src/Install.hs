@@ -27,6 +27,7 @@ buildRootfs installConf = do
     bootstrapArch
     -- TODO: arch-chroot run settings
     -- TODO: prepare bootloader
+    personalCustomization
     umountImgs
   where
     rootfsMnt = "/mnt/rootfs"
@@ -62,6 +63,10 @@ buildRootfs installConf = do
         logInfo $ fromString [i|Rendering fstab|]
         liftIO $ writeFile (rootfsMnt </> "/etc/fstab") =<<
             renderFstab (installConf ^. system . fstabEntries)
+    personalCustomization = do
+        createDirectoryIfMissing False "/mnt/scratch"
+        createDirectoryIfMissing False "/mnt/garage"
+        createDirectoryIfMissing False "/mnt/usb"
     umountImgs = do
         umountPoint espMnt
         umountPoint rootfsMnt
