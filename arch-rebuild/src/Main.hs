@@ -22,7 +22,7 @@ import Config
 import Install
 
 data CmdOpts
-    = Install { confPath :: FilePath } -- XXX
+    = CopyDiskRootfsImage { confPath :: FilePath }
     | BuildRootfs { confPath :: FilePath }
     deriving (Generic)
 
@@ -45,9 +45,9 @@ main = do
     cmd <- pack <$> getProgName >>= getRecord
     let run =
             case cmd of
-                Install confPath -> do
+                CopyDiskRootfsImage confPath -> do
                     sysConf <- loadSystemConfig $ confPath </> "system.dhall"
-                    installArch sysConf
+                    copyDiskRootfsImage confPath
                 BuildRootfs confPath -> do
                     installConf <- loadInstallConfig $ confPath </> "install.dhall"
                     buildRootfs installConf

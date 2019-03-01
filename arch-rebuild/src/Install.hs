@@ -6,6 +6,7 @@ module Install where
 
 import RIO hiding (threadDelay, unwords)
 import RIO.Directory
+import RIO.FilePath ((</>))
 
 import Data.String.Interpolate
 import Data.Text (unwords)
@@ -23,13 +24,12 @@ buildRootfs installConf = do
     mountImgs
     -- TODO: create btrfs subvols
     bootstrapArch
-    -- TODO: render fstab
     -- TODO: arch-chroot run settings
     -- TODO: prepare bootloader
     umountImgs
   where
-    espMnt = "/mnt/esp"
     rootfsMnt = "/mnt/rootfs"
+    espMnt = rootfsMnt </> "boot"
     espPath = installConf ^. espImage
     rootfsPath = installConf ^. rootfsImage
     createImgs = do
@@ -43,22 +43,31 @@ buildRootfs installConf = do
         logInfo $ fromString [i|Formatting rootfs partition: #{rootfsPath}|]
         runCmd_ [i|mkfs.btrfs #{rootfsPath}|]
     mountImgs = do
-        createDirectoryIfMissing False espMnt
         createDirectoryIfMissing False rootfsMnt
-        logInfo $ fromString [i|Mounting ESP on: #{espMnt}|]
-        mountLoopImage espPath espMnt
+        createDirectoryIfMissing False espMnt
         logInfo $ fromString [i|Mounting rootfs on: #{rootfsMnt}|]
         mountLoopImage rootfsPath rootfsMnt
+        logInfo $ fromString [i|Mounting ESP on: #{espMnt}|]
+        mountLoopImage espPath espMnt
     bootstrapArch = do
         logInfo $ fromString [i|Bootstrapping Arch on: #{rootfsMnt}|]
-        liftIO $ writeFile "/etc/pacman.d/mirrorlist" $ installConf ^. system . pacman . mirrorlist
         let packages = unwords $ installConf ^. system . pacman . explicitPackages
             groups = unwords $ installConf ^. system . pacman . packageGroups
         runCmd_ [i|pacstrap #{rootfsMnt} #{packages} #{groups}|]
+        logInfo $ fromString [i|Copying mirrorlist|]
+        liftIO $ writeFile (rootfsMnt </> "/etc/pacman.d/mirrorlist") $ installConf ^. system .
+            pacman .
+            mirrorlist
+        logInfo $ fromString [i|Rendering fstab|]
+        liftIO $ writeFile (rootfsMnt </> "/etc/fstab") =<<
+            renderFstab (installConf ^. system . fstabEntries)
     umountImgs = do
         umountPoint espMnt
         umountPoint rootfsMnt
 
+--
+-- TODO: Finish and take a BlockDev as argument
+--
 partitionDisk :: (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> m ()
 partitionDisk (DevPath path) = do
     logInfo $ fromString [i|Partitioning device: #{path}|]
@@ -76,12 +85,8 @@ partitionDisk (DevPath path) = do
     rootfsPath = [i|#{path}/2|]
 partitionDisk dev = throwString [i|unsopported block device: #{dev}|]
 
-installArch :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
-installArch sysConf = do
-    logInfo "Installing Arch"
-    liftIO $ writeFile "/etc/pacman.d/mirrorlist" $ sysConf ^. pacman . mirrorlist
-    runCmd_
-        [i|pacstrap /mnt base btrfs-progs #{sysConf^.pacman.explicitPackages} #{sysConf^.pacman.packageGroups}|]
-    logInfo "Configuring Arch chroot"
-    fstab <- renderFstab $ sysConf ^. fstabEntries
-    liftIO $ writeFile "/mnt/etc/fstab" fstab
+--
+-- TODO
+--
+copyDiskRootfsImage :: (MonadIO m, MonadReader env m, HasLogFunc env) => FilePath -> m ()
+copyDiskRootfsImage = undefined
