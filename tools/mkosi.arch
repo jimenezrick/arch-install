@@ -19,5 +19,5 @@ Packages=
 	bash-completion
 
 [Partitions]
-# 20GiB
-RootSize = 21474836480
+# 4GiB
+RootSize = 4294967296

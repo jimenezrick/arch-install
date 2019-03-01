@@ -14,6 +14,7 @@ import Data.Text.IO (writeFile)
 
 import Command
 import Config
+import Disk
 import Filesystem
 import Fstab
 
@@ -65,25 +66,30 @@ buildRootfs installConf = do
         umountPoint espMnt
         umountPoint rootfsMnt
 
---
--- TODO: Finish and take a BlockDev as argument
---
 partitionDisk :: (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> m ()
-partitionDisk (DevPath path) = do
-    logInfo $ fromString [i|Partitioning device: #{path}|]
-    runCmd_ $ [i|parted -s #{path} -a optimal|] ++
+partitionDisk blockdev = do
+    dev <- findDevice
+    let espDev = [i|#{dev}/1|]
+        rootfsDev = [i|#{dev}/2|]
+    logInfo $ fromString [i|Partitioning device: #{dev}|]
+    runCmd_ $ [i|parted -s #{dev} -a optimal|] ++
         " mklabel gpt \
         \ mkpart primary 0% 513MiB \
         \ mkpart primary 513MiB 100% \
         \ set 1 boot on"
-    logInfo $ fromString [i|Formatting ESP: #{espPath}|]
-    runCmd_ [i|mkfs.fat -F32 #{espPath}|]
-    logInfo $ fromString [i|Formatting rootfs partition: #{rootfsPath}|]
-    runCmd_ [i|mkfs.btrfs #{rootfsPath}|]
+    logInfo $ fromString [i|Formatting ESP: #{espDev}|]
+    runCmd_ [i|mkfs.fat -F32 #{espDev}|]
+    logInfo $ fromString [i|Formatting rootfs partition: #{rootfsDev}|]
+    runCmd_ [i|mkfs.btrfs #{rootfsDev}|]
+    --
+    -- TODO: btrfs subvols, in a different function
+    --
   where
-    espPath = [i|#{path}/1|]
-    rootfsPath = [i|#{path}/2|]
-partitionDisk dev = throwString [i|unsopported block device: #{dev}|]
+    findDevice =
+        case blockdev of
+            (DevPath path) -> return path
+            (DiskModel model) -> findDiskDevice model
+            (Partition _ _) -> throwString [i|device cannot be a partition|]
 
 --
 -- TODO
