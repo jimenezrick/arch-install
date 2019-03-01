@@ -17,6 +17,8 @@ Manual steps post-installation
    - dwmstatus
 3. Install AUR packages using cower.
 
+--- XXX ----------------------------------------------------------------
+
 New way
 =======
 
@@ -29,3 +31,6 @@ From QEMU:
   /arch-rebuild-helpers/prepare.sh
   cd /mnt/arch-rebuild/tools
   ./arch-rebuild build-rootfs -c ../config
+
+From the host system:
+  sudo cabal new-exec arch-rebuild -- build-rootfs -c ../config

@@ -6,7 +6,7 @@ module Install where
 
 import RIO hiding (threadDelay, unwords)
 import RIO.Directory
-import RIO.FilePath ((</>))
+import RIO.FilePath ((</>), takeDirectory)
 
 import Data.String.Interpolate
 import Data.Text (unwords)
@@ -30,10 +30,10 @@ buildRootfs installConf = do
     personalCustomization
     umountImgs
   where
-    rootfsMnt = "/mnt/rootfs"
-    espMnt = rootfsMnt </> "boot"
     espPath = installConf ^. espImage
     rootfsPath = installConf ^. rootfsImage
+    rootfsMnt = takeDirectory rootfsPath </> "rootfs"
+    espMnt = rootfsMnt </> "boot"
     createImgs = do
         logInfo $ fromString [i|Creating ESP image: #{espPath}|]
         createZeroImage espPath $ installConf ^. espImageSize
@@ -46,9 +46,9 @@ buildRootfs installConf = do
         runCmd_ [i|mkfs.btrfs #{rootfsPath}|]
     mountImgs = do
         createDirectoryIfMissing False rootfsMnt
-        createDirectoryIfMissing False espMnt
         logInfo $ fromString [i|Mounting rootfs on: #{rootfsMnt}|]
         mountLoopImage rootfsPath rootfsMnt
+        createDirectoryIfMissing False espMnt
         logInfo $ fromString [i|Mounting ESP on: #{espMnt}|]
         mountLoopImage espPath espMnt
     bootstrapArch = do
@@ -94,7 +94,7 @@ partitionDisk blockdev = do
         case blockdev of
             (DevPath path) -> return path
             (DiskModel model) -> findDiskDevice model
-            (Partition _ _) -> throwString [i|device cannot be a partition|]
+            (Partition _ _) -> throwString [i|block device cannot be a partition|]
 
 --
 -- TODO
