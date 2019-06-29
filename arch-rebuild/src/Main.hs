@@ -15,15 +15,18 @@ import RIO.Text (pack)
 
 import Options.Generic
 import System.Environment (getProgName)
-import System.Exit (exitFailure)
 
 import Checks
 import Config
 import Install
 
+--
+-- TODO: be able to grab the Dhall config from HTTP
+--
 data CmdOpts
     = CopyDiskRootfsImage { confPath :: FilePath }
     | BuildRootfs { confPath :: FilePath }
+    | PrepareChroot { chrootPath :: FilePath } -- XXX: fork and prepare the chroot
     deriving (Generic)
 
 instance ParseRecord CmdOpts where

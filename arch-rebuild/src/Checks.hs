@@ -9,7 +9,6 @@ import RIO hiding (threadDelay)
 import RIO.Directory
 import RIO.Process
 
-import System.Exit (exitFailure)
 import System.Posix.User (getEffectiveUserID)
 import Time.Units (Second, Time(..), threadDelay)
 

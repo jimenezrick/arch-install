@@ -8,9 +8,9 @@ module Config where
 import RIO
 
 import Control.Lens
-import Data.UUID (UUID, toText)
 import Dhall
 
+import qualified Data.UUID as U
 import qualified RIO.Text as T
 
 data BlockDev
@@ -23,6 +23,16 @@ data BlockDev
 instance Interpret BlockDev
 
 makeLenses ''BlockDev
+
+newtype UUID = UUID
+    { _uuid :: Text
+    } deriving (Show, Generic)
+
+instance Interpret UUID
+
+instance Inject UUID
+
+makeLenses ''UUID
 
 data FstabEntry = FstabEntry
     { _fsEntry :: BlockDev
@@ -54,26 +64,12 @@ data SystemConfig = SystemConfig
     , _locale :: Text
     , _keymap :: Text
     , _fstabEntries :: [FstabEntry]
-    , _cryptroot :: BlockDev
     , _pacman :: PacmanConfig
     } deriving (Show, Generic)
 
 instance Interpret SystemConfig
 
 makeLenses ''SystemConfig
-
-data InstallConfig = InstallConfig
-    { _system :: SystemConfig
-    , _espImage :: FilePath
-    , _rootfsImage :: FilePath
-    , _espImageSize :: Text
-    , _rootfsImageSize :: Text
-    , _rootDisk :: BlockDev
-    } deriving (Show, Generic)
-
-instance Interpret InstallConfig
-
-makeLenses ''InstallConfig
 
 data BootEntries = BootEntries
     { _bootName :: Text
@@ -93,6 +89,19 @@ instance Interpret BootConfig
 
 makeLenses ''BootConfig
 
+data InstallConfig = InstallConfig
+    { _system :: SystemConfig
+    , _boot :: UUID -> BootConfig
+    , _espImage :: FilePath
+    , _rootfsImage :: FilePath
+    , _espImageSize :: Text
+    , _rootfsImageSize :: Text
+    } deriving (Generic)
+
+instance Interpret InstallConfig
+
+makeLenses ''InstallConfig
+
 auto' :: Interpret a => Type a
 auto' = autoWith (defaultInterpretOptions {fieldModifier = T.dropWhile (== '_')})
 
@@ -102,7 +111,7 @@ loadInstallConfig path' = liftIO $ inputFile auto' path'
 loadSystemConfig :: MonadIO m => FilePath -> m SystemConfig
 loadSystemConfig path' = liftIO $ inputFile auto' path'
 
-loadBootConfig :: MonadIO m => UUID -> FilePath -> m BootConfig
-loadBootConfig luksUuid path' = do
+loadBootConfig :: MonadIO m => FilePath -> U.UUID -> m BootConfig
+loadBootConfig path' luksUuid = do
     conf <- liftIO $ inputFile auto' path'
-    return . conf $ toText luksUuid
+    return . conf $ U.toText luksUuid

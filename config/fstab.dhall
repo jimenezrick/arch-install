@@ -1,8 +1,9 @@
     let BlockDev = ./blockdev.dhall 
 
+in  let disk = ./disk.dhall 
+
 in  [ { fsEntry =
-          BlockDev.Partition
-          { diskModel = "Samsung_SSD_850_XXX_XXX_XXX", partNum = 1 }
+          disk.bootDev
       , fsMountPoint =
           "/boot"
       , fsType =
@@ -54,7 +55,7 @@ in  [ { fsEntry =
           0
       }
     , { fsEntry =
-          BlockDev.DiskModel { model = "INTEL_SSDSA2CW120G3" }
+          disk.scratchDev
       , fsMountPoint =
           "/mnt/scratch"
       , fsType =
@@ -67,7 +68,7 @@ in  [ { fsEntry =
           0
       }
     , { fsEntry =
-          BlockDev.DiskModel { model = "SEAGATE_ST32502NSSUN250G_0920811VV4" }
+          disk.garageDev
       , fsMountPoint =
           "/mnt/garage"
       , fsType =

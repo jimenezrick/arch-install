@@ -12,7 +12,7 @@ import RIO.Text (pack, unlines)
 import Control.Lens hiding ((??))
 import Data.String.Interpolate
 
-import Config
+import Config hiding (uuid)
 import Disk
 import Error
 
