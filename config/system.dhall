@@ -7,7 +7,7 @@
 , keymap =
     "us"
 , fstabEntries =
-    ./fstab.dhall 
+    ./fstab.dhall
 , pacman =
-    ./pacman.dhall 
+    ./pacman.dhall
 }
