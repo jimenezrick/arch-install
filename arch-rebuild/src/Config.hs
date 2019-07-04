@@ -24,16 +24,6 @@ instance Interpret BlockDev
 
 makeLenses ''BlockDev
 
-newtype UUID = UUID
-    { _uuid :: Text
-    } deriving (Show, Generic)
-
-instance Interpret UUID
-
-instance Inject UUID
-
-makeLenses ''UUID
-
 data FstabEntry = FstabEntry
     { _fsEntry :: BlockDev
     , _fsMountPoint :: FilePath
@@ -91,7 +81,7 @@ makeLenses ''BootConfig
 
 data InstallConfig = InstallConfig
     { _system :: SystemConfig
-    , _boot :: UUID -> BootConfig
+    , _boot :: Text -> BootConfig
     , _espImage :: FilePath
     , _rootfsImage :: FilePath
     , _espImageSize :: Text
