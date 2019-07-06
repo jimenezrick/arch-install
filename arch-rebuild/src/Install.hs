@@ -64,9 +64,10 @@ buildRootfs installConf = do
         liftIO $ writeFile (rootfsMnt </> "/etc/fstab") =<<
             renderFstab (installConf ^. system . fstabEntries)
     personalCustomization = do
-        createDirectoryIfMissing False "/mnt/scratch"
-        createDirectoryIfMissing False "/mnt/garage"
-        createDirectoryIfMissing False "/mnt/usb"
+        logInfo $ fromString [i|Customizing rootfs on: #{rootfsMnt}|]
+        createDirectoryIfMissing True $ rootfsMnt </> "mnt/scratch"
+        createDirectoryIfMissing True $ rootfsMnt </> "mnt/garage"
+        createDirectoryIfMissing True $ rootfsMnt </> "mnt/usb"
     umountImgs = do
         umountPoint espMnt
         umountPoint rootfsMnt
