@@ -24,8 +24,8 @@ New way
 
 From the host:
   cd tools
-  PATH=$PATH:mkosi sudo ./build-img.sh
-  PATH=$PATH:mkosi sudo ./run-qemu.sh
+  sudo ./build-image.sh
+  sudo ./run-qemu.sh
 
 From QEMU:
   /arch-rebuild-helpers/prepare.sh
