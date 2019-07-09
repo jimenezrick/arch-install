@@ -12,40 +12,36 @@ import RIO.Text (pack, unlines)
 import Control.Lens hiding ((??))
 import Data.String.Interpolate
 
-import Config hiding (uuid)
-import Disk
+import Config
 import Error
+
+import qualified Disk
 
 renderFstab :: MonadIO m => [FstabEntry] -> m Text
 renderFstab entries = unlines . map pack . concat <$> mapM renderDev entries
   where
+    formatEntry fsSpec entry =
+        [i|#{fsSpec} #{entry^.fsMountPoint} #{entry^.fsType} #{entry^.fsOpts} #{entry^.fsDump} #{entry^.fsck}|]
     renderDev entry =
         case entry ^. fsEntry of
+            FsUUID {_uuid} -> return [formatEntry [i|UUID=#{_uuid}|] entry]
+            DevPath {_path} -> return [formatEntry [i|#{_path}|] entry]
             DiskModel {_model} -> do
-                disk <- getDiskInfo _model
+                disk <- Disk.getDiskInfo _model
                 case disk of
-                    DiskWithPartitionsInfo {} -> throwString "expecting a disk without partitions"
-                    DiskInfo {uuid} ->
-                        return
-                            [ [i|# #{_model}|]
-                            , [i|UUID=#{uuid} #{entry^.fsMountPoint} #{entry^.fsType} #{entry^.fsOpts} #{entry^.fsDump} #{entry^.fsck}|]
-                            ]
+                    Disk.DiskWithPartitionsInfo {} ->
+                        throwString "expecting a disk without partitions"
+                    Disk.DiskInfo {Disk.uuid} ->
+                        return [[i|# #{_model}|], formatEntry [i|UUID=#{uuid}|] entry]
             Partition {_diskModel, _partNum} -> do
-                disk <- getDiskInfo _diskModel
+                disk <- Disk.getDiskInfo _diskModel
                 case disk of
-                    DiskInfo {} -> throwString "expecting a disk with partitions"
-                    DiskWithPartitionsInfo {partitions} -> do
-                        dev <- findDiskDevice _diskModel
+                    Disk.DiskInfo {} -> throwString "expecting a disk with partitions"
+                    Disk.DiskWithPartitionsInfo {Disk.partitions} -> do
+                        dev <- Disk.findDiskDevice _diskModel
                         uuid <-
                             throwNothing "missing expected partition" $
                             return
-                                (fromList [(d, u) | (PartitionInfo d u _) <- partitions] ^.
+                                (fromList [(d, u) | (Disk.PartitionInfo d u _) <- partitions] ^.
                                  at [i|#{dev}#{_partNum}|])
-                        return
-                            [ [i|# #{_diskModel}|]
-                            , [i|UUID=#{uuid} #{entry^.fsMountPoint} #{entry^.fsType} #{entry^.fsOpts} #{entry^.fsDump} #{entry^.fsck}|]
-                            ]
-            DevPath {_path} ->
-                return
-                    [ [i|#{_path} #{entry^.fsMountPoint} #{entry^.fsType} #{entry^.fsOpts} #{entry^.fsDump} #{entry^.fsck}|]
-                    ]
+                        return [[i|# #{_diskModel}|], formatEntry [i|UUID=#{uuid}|] entry]

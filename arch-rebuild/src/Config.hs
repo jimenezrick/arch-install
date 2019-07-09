@@ -14,7 +14,8 @@ import qualified Data.UUID as U
 import qualified RIO.Text as T
 
 data BlockDev
-    = DevPath { _path :: FilePath }
+    = FsUUID { _uuid :: Text }
+    | DevPath { _path :: FilePath }
     | DiskModel { _model :: Text }
     | Partition { _diskModel :: Text
                 , _partNum :: Natural }

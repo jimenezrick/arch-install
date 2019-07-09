@@ -1,4 +1,6 @@
-< DevPath :
+< FsUUID :
+    { uuid : Text }
+| DevPath :
     { path : Text }
 | DiskModel :
     { model : Text }

@@ -87,7 +87,7 @@ findDiskDevice model = do
     (j :: Value) <-
         throwLeft $ eitherDecode' <$> readProcessStdout_ "lsblk --json --nodeps -o path,model"
     case j ^?! key "blockdevices" . _Array ^.. folded .
-         filtered (\d -> d ^?! key "model" . _String == model) of
+         filtered (\d -> d ^? key "model" . _String == Just model) of
         [d] -> return $ d ^?! key "path" . _String . _Text . to ("/dev" </>)
         [] -> throwString "Device not found"
         _ -> throwString "Could not uniquely identify the device"
@@ -97,4 +97,4 @@ isDiskMounted device = do
     (j :: Value) <-
         throwLeft $ eitherDecode' <$> readProcessStdout_ "findmnt --json --real -o source"
     return . not . null $ j ^?! key "filesystems" . _Array ^.. folded .
-        filtered (\fs -> fs ^?! key "source" . _String . _Text == device)
+        filtered (\fs -> fs ^? key "source" . _String . _Text == Just device)
