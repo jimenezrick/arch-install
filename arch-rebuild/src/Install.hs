@@ -56,13 +56,12 @@ buildRootfs installConf = do
         let packages = unwords $ installConf ^. system . pacman . explicitPackages
             groups = unwords $ installConf ^. system . pacman . packageGroups
         runCmd_ [i|pacstrap #{rootfsMnt} #{packages} #{groups}|]
-        logInfo $ fromString [i|Copying mirrorlist|]
-        liftIO $ writeFile (rootfsMnt </> "/etc/pacman.d/mirrorlist") $ installConf ^. system .
-            pacman .
-            mirrorlist
-        logInfo $ fromString [i|Rendering fstab|]
-        liftIO $ writeFile (rootfsMnt </> "/etc/fstab") =<<
-            renderFstab (installConf ^. system . fstabEntries)
+        let mirrorlistPath = rootfsMnt </> "etc/pacman.d/mirrorlist"
+        logInfo $ fromString [i|Copying mirrorlist to: #{mirrorlistPath}|]
+        liftIO $ writeFile mirrorlistPath $ installConf ^. system . pacman . mirrorlist
+        let fstabPath = rootfsMnt </> "etc/fstab"
+        logInfo $ fromString [i|Rendering fstab to: #{fstabPath}|]
+        liftIO $ writeFile fstabPath =<< renderFstab (installConf ^. system . fstabEntries)
     personalCustomization = do
         logInfo $ fromString [i|Customizing rootfs on: #{rootfsMnt}|]
         createDirectoryIfMissing True $ rootfsMnt </> "mnt/scratch"
