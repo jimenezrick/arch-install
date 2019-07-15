@@ -6,8 +6,8 @@
     "en_US"
 , keymap =
     "us"
-, fstabEntries =
-    ./fstab.dhall
-, pacman =
+, storage =
+    ./storage.dhall
+, packages =
     ./pacman.dhall
 }

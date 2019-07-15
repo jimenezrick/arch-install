@@ -4,12 +4,13 @@
 
 module Install where
 
-import RIO hiding (threadDelay, unwords)
+import RIO
 import RIO.Directory
 import RIO.FilePath ((</>), takeDirectory)
 
+import qualified RIO.Text as T
+
 import Data.String.Interpolate
-import Data.Text (unwords)
 import Data.Text.IO (writeFile)
 
 import Command
@@ -18,27 +19,28 @@ import Disk
 import Filesystem
 import Fstab
 
-buildRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => InstallConfig -> m ()
-buildRootfs installConf = do
+buildRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
+buildRootfs sysConf = do
     createImgs
     formatImgs
     mountImgs
-    -- TODO: create btrfs subvols
+    createDiskSubvols rootfsMnt $ fst <$> sysConf ^. storage . rootSubvolumes
+    mountDiskSubvols rootfsMnt $ sysConf ^. storage . rootSubvolumes
     bootstrapArch
     -- TODO: arch-chroot run settings
     -- TODO: prepare bootloader
     personalCustomization
     umountImgs
   where
-    espPath = installConf ^. espImage
-    rootfsPath = installConf ^. rootfsImage
+    espPath = sysConf ^. storage . espImage
+    rootfsPath = sysConf ^. storage . rootfsImage
     rootfsMnt = takeDirectory rootfsPath </> "rootfs"
     espMnt = rootfsMnt </> "boot"
     createImgs = do
         logInfo $ fromString [i|Creating ESP image: #{espPath}|]
-        createZeroImage espPath $ installConf ^. espImageSize
+        createZeroImage espPath $ sysConf ^. storage . espImageSize
         logInfo $ fromString [i|Creating rootfs image: #{rootfsPath}|]
-        createZeroImage rootfsPath $ installConf ^. rootfsImageSize
+        createZeroImage rootfsPath $ sysConf ^. storage . rootfsImageSize
     formatImgs = do
         logInfo $ fromString [i|Formatting ESP: #{espPath}|]
         runCmd_ [i|mkfs.fat -F32 #{espPath}|]
@@ -53,15 +55,15 @@ buildRootfs installConf = do
         mountLoopImage espPath espMnt
     bootstrapArch = do
         logInfo $ fromString [i|Bootstrapping Arch on: #{rootfsMnt}|]
-        let packages = unwords $ installConf ^. system . pacman . explicitPackages
-            groups = unwords $ installConf ^. system . pacman . packageGroups
-        runCmd_ [i|pacstrap #{rootfsMnt} #{packages} #{groups}|]
+        let pkgList = T.unwords $ sysConf ^. packages . explicitPackages
+            grpList = T.unwords $ sysConf ^. packages . packageGroups
+        runCmd_ [i|pacstrap #{rootfsMnt} #{pkgList} #{grpList}|]
         let mirrorlistPath = rootfsMnt </> "etc/pacman.d/mirrorlist"
         logInfo $ fromString [i|Copying mirrorlist to: #{mirrorlistPath}|]
-        liftIO $ writeFile mirrorlistPath $ installConf ^. system . pacman . mirrorlist
+        liftIO $ writeFile mirrorlistPath $ sysConf ^. packages . mirrorlist
         let fstabPath = rootfsMnt </> "etc/fstab"
         logInfo $ fromString [i|Rendering fstab to: #{fstabPath}|]
-        liftIO $ writeFile fstabPath =<< renderFstab (installConf ^. system . fstabEntries)
+        liftIO $ writeFile fstabPath =<< renderFstab (sysConf ^. storage . fstabEntries)
     personalCustomization = do
         logInfo $ fromString [i|Customizing rootfs on: #{rootfsMnt}|]
         createDirectoryIfMissing True $ rootfsMnt </> "mnt/scratch"
@@ -71,6 +73,23 @@ buildRootfs installConf = do
         umountPoint espMnt
         umountPoint rootfsMnt
 
+createDiskSubvols :: (MonadIO m, MonadReader env m, HasLogFunc env) => FilePath -> [String] -> m ()
+createDiskSubvols rootfsMnt subvols = do
+    logInfo $ fromString [i|Creating BTRFS subvolumes: #{unwords subvols}|]
+    forM_ subvols $ \vol -> runCmd_ [i|btrfs subvolume create #{rootfsMnt </> vol}|]
+
+mountDiskSubvols ::
+       (MonadIO m, MonadReader env m, HasLogFunc env) => FilePath -> [(String, FilePath)] -> m ()
+mountDiskSubvols rootfsMnt subvols = do
+    logInfo $
+        fromString
+            [i|Mounting BTRFS subvolumes: #{unwords $ map (\(v,m) -> v ++ ":" ++ m) subvols}|]
+    forM_ subvols $ \(vol, mnt) ->
+        runCmd_ [i|mount -o subvol=#{vol} #{rootfsMnt} #{rootfsMnt </> mnt}|]
+
+--
+-- TODO: Review
+--
 partitionDisk :: (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> m ()
 partitionDisk blockdev = do
     dev <- findDevice

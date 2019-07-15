@@ -10,7 +10,6 @@ import RIO
 import Control.Lens
 import Dhall
 
-import qualified Data.UUID as U
 import qualified RIO.Text as T
 
 data BlockDev
@@ -38,30 +37,6 @@ instance Interpret FstabEntry
 
 makeLenses ''FstabEntry
 
-data PacmanConfig = PacmanConfig
-    { _mirrorlist :: Text
-    , _explicitPackages :: [Text]
-    , _packageGroups :: [Text]
-    , _aurPackages :: [Text]
-    } deriving (Show, Generic)
-
-instance Interpret PacmanConfig
-
-makeLenses ''PacmanConfig
-
-data SystemConfig = SystemConfig
-    { _hostname :: Text
-    , _zoneInfo :: Text
-    , _locale :: Text
-    , _keymap :: Text
-    , _fstabEntries :: [FstabEntry]
-    , _pacman :: PacmanConfig
-    } deriving (Show, Generic)
-
-instance Interpret SystemConfig
-
-makeLenses ''SystemConfig
-
 data BootEntries = BootEntries
     { _bootName :: Text
     , _bootConf :: Text
@@ -80,29 +55,46 @@ instance Interpret BootConfig
 
 makeLenses ''BootConfig
 
-data InstallConfig = InstallConfig
-    { _system :: SystemConfig
-    , _boot :: Text -> BootConfig
+data StorageConfig = StorageConfig
+    { _boot :: BootConfig
+    , _fstabEntries :: [FstabEntry]
     , _espImage :: FilePath
     , _rootfsImage :: FilePath
     , _espImageSize :: Text
     , _rootfsImageSize :: Text
-    } deriving (Generic)
+    , _rootSubvolumes :: [(String, FilePath)]
+    } deriving (Show, Generic)
 
-instance Interpret InstallConfig
+instance Interpret StorageConfig
 
-makeLenses ''InstallConfig
+makeLenses ''StorageConfig
+
+data PacmanConfig = PacmanConfig
+    { _mirrorlist :: Text
+    , _explicitPackages :: [Text]
+    , _packageGroups :: [Text]
+    , _aurPackages :: [Text]
+    } deriving (Show, Generic)
+
+instance Interpret PacmanConfig
+
+makeLenses ''PacmanConfig
+
+data SystemConfig = SystemConfig
+    { _hostname :: Text
+    , _zoneInfo :: Text
+    , _locale :: Text
+    , _keymap :: Text
+    , _storage :: StorageConfig
+    , _packages :: PacmanConfig
+    } deriving (Show, Generic)
+
+instance Interpret SystemConfig
+
+makeLenses ''SystemConfig
 
 auto' :: Interpret a => Type a
 auto' = autoWith (defaultInterpretOptions {fieldModifier = T.dropWhile (== '_')})
 
-loadInstallConfig :: MonadIO m => FilePath -> m InstallConfig
-loadInstallConfig path' = liftIO $ inputFile auto' path'
-
 loadSystemConfig :: MonadIO m => FilePath -> m SystemConfig
 loadSystemConfig path' = liftIO $ inputFile auto' path'
-
-loadBootConfig :: MonadIO m => FilePath -> U.UUID -> m BootConfig
-loadBootConfig path' luksUuid = do
-    conf <- liftIO $ inputFile auto' path'
-    return . conf $ U.toText luksUuid

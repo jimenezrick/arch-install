@@ -52,8 +52,8 @@ main = do
                     sysConf <- loadSystemConfig $ confPath </> "system.dhall"
                     copyDiskRootfsImage confPath
                 BuildRootfs confPath -> do
-                    installConf <- loadInstallConfig $ confPath </> "install.dhall"
-                    buildRootfs installConf
+                    sysConf <- loadSystemConfig $ confPath </> "system.dhall"
+                    buildRootfs sysConf
     runApp $ do
         doPreInstallChecks
         catch run (\(ex :: SomeException) -> logError (displayShow ex) >> liftIO exitFailure)
