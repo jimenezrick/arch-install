@@ -11,9 +11,9 @@
 , rootfsImageSize =
     "20G"
 , rootSubvolumes =
-    [ { _1 = "@", _2 = "/" }
-    , { _1 = "@etc", _2 = "/etc" }
-    , { _1 = "@home", _2 = "/home" }
-    , { _1 = "@snapshots", _2 = "/.snapshots" }
+    [ { `1` = "@", `2` = "/" }
+    , { `1` = "@etc", `2` = "/etc" }
+    , { `1` = "@home", `2` = "/home" }
+    , { `1` = "@snapshots", `2` = "/.snapshots" }
     ]
 }

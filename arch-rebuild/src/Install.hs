@@ -2,12 +2,16 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Install where
+module Install
+    ( buildRootfs
+    , copyDiskRootfsImage
+    ) where
 
 import RIO
 import RIO.Directory
-import RIO.FilePath ((</>), takeDirectory)
+import RIO.FilePath (takeDirectory)
 
+import qualified RIO.FilePath as F
 import qualified RIO.Text as T
 
 import Data.String.Interpolate
@@ -21,16 +25,17 @@ import Fstab
 
 buildRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
 buildRootfs sysConf = do
+    logInfo "Starting Arch Linux image build"
     createImgs
     formatImgs
-    mountImgs
-    createDiskSubvols rootfsMnt $ fst <$> sysConf ^. storage . rootSubvolumes
-    mountDiskSubvols rootfsMnt $ sysConf ^. storage . rootSubvolumes
+    createDiskSubvols rootfsPath rootfsMnt $ fst <$> sysConf ^. storage . rootSubvolumes
+    mountDiskSubvols rootfsPath rootfsMnt $ sysConf ^. storage . rootSubvolumes
+    mountEsp
     bootstrapArch
     -- TODO: arch-chroot run settings
     -- TODO: prepare bootloader
     personalCustomization
-    umountImgs
+    umountAllUnder rootfsMnt
   where
     espPath = sysConf ^. storage . espImage
     rootfsPath = sysConf ^. storage . rootfsImage
@@ -45,11 +50,8 @@ buildRootfs sysConf = do
         logInfo $ fromString [i|Formatting ESP: #{espPath}|]
         runCmd_ [i|mkfs.fat -F32 #{espPath}|]
         logInfo $ fromString [i|Formatting rootfs partition: #{rootfsPath}|]
-        runCmd_ [i|mkfs.btrfs #{rootfsPath}|]
-    mountImgs = do
-        createDirectoryIfMissing False rootfsMnt
-        logInfo $ fromString [i|Mounting rootfs on: #{rootfsMnt}|]
-        mountLoopImage rootfsPath rootfsMnt
+        runCmd_ [i|mkfs.btrfs -f #{rootfsPath}|]
+    mountEsp = do
         createDirectoryIfMissing False espMnt
         logInfo $ fromString [i|Mounting ESP on: #{espMnt}|]
         mountLoopImage espPath espMnt
@@ -58,34 +60,41 @@ buildRootfs sysConf = do
         let pkgList = T.unwords $ sysConf ^. packages . explicitPackages
             grpList = T.unwords $ sysConf ^. packages . packageGroups
         runCmd_ [i|pacstrap #{rootfsMnt} #{pkgList} #{grpList}|]
-        let mirrorlistPath = rootfsMnt </> "etc/pacman.d/mirrorlist"
+        let mirrorlistPath = rootfsMnt </> "/etc/pacman.d/mirrorlist"
         logInfo $ fromString [i|Copying mirrorlist to: #{mirrorlistPath}|]
         liftIO $ writeFile mirrorlistPath $ sysConf ^. packages . mirrorlist
-        let fstabPath = rootfsMnt </> "etc/fstab"
+        let fstabPath = rootfsMnt </> "/etc/fstab"
         logInfo $ fromString [i|Rendering fstab to: #{fstabPath}|]
         liftIO $ writeFile fstabPath =<< renderFstab (sysConf ^. storage . fstabEntries)
     personalCustomization = do
         logInfo $ fromString [i|Customizing rootfs on: #{rootfsMnt}|]
-        createDirectoryIfMissing True $ rootfsMnt </> "mnt/scratch"
-        createDirectoryIfMissing True $ rootfsMnt </> "mnt/garage"
-        createDirectoryIfMissing True $ rootfsMnt </> "mnt/usb"
-    umountImgs = do
-        umountPoint espMnt
-        umountPoint rootfsMnt
+        createDirectoryIfMissing True $ rootfsMnt </> "/mnt/scratch"
+        createDirectoryIfMissing True $ rootfsMnt </> "/mnt/garage"
+        createDirectoryIfMissing True $ rootfsMnt </> "/mnt/usb"
 
-createDiskSubvols :: (MonadIO m, MonadReader env m, HasLogFunc env) => FilePath -> [String] -> m ()
-createDiskSubvols rootfsMnt subvols = do
-    logInfo $ fromString [i|Creating BTRFS subvolumes: #{unwords subvols}|]
-    forM_ subvols $ \vol -> runCmd_ [i|btrfs subvolume create #{rootfsMnt </> vol}|]
+createDiskSubvols ::
+       (MonadIO m, MonadReader env m, HasLogFunc env) => FilePath -> FilePath -> [String] -> m ()
+createDiskSubvols rootfsPath rootfsMnt subvols = do
+    createDirectoryIfMissing False rootfsMnt
+    logInfo $ fromString [i|Mounting rootfs on: #{rootfsMnt}|]
+    mountLoopImage rootfsPath rootfsMnt
+    logInfo $ fromString [i|Creating BTRFS subvolumes on #{rootfsPath}: [#{unwords subvols}]|]
+    forM_ subvols $ \subvol -> runCmd_ [i|btrfs subvolume create #{rootfsMnt </> subvol}|]
+    umountPoint rootfsMnt
 
 mountDiskSubvols ::
-       (MonadIO m, MonadReader env m, HasLogFunc env) => FilePath -> [(String, FilePath)] -> m ()
-mountDiskSubvols rootfsMnt subvols = do
+       (MonadIO m, MonadReader env m, HasLogFunc env)
+    => FilePath
+    -> FilePath
+    -> [(String, FilePath)]
+    -> m ()
+mountDiskSubvols rootfsPath rootfsMnt subvols = do
     logInfo $
         fromString
-            [i|Mounting BTRFS subvolumes: #{unwords $ map (\(v,m) -> v ++ ":" ++ m) subvols}|]
-    forM_ subvols $ \(vol, mnt) ->
-        runCmd_ [i|mount -o subvol=#{vol} #{rootfsMnt} #{rootfsMnt </> mnt}|]
+            [i|Mounting BTRFS subvolumes of #{rootfsPath}: [#{unwords $ map (\(v,p) -> v ++ ":" ++ p) subvols}]|]
+    forM_ subvols $ \(subvol, subvolPath) -> do
+        createDirectoryIfMissing False $ rootfsMnt </> subvolPath
+        mountSubvol rootfsPath (rootfsMnt </> subvolPath) subvol
 
 --
 -- TODO: Review
@@ -120,3 +129,8 @@ partitionDisk blockdev = do
 --
 copyDiskRootfsImage :: (MonadIO m, MonadReader env m, HasLogFunc env) => FilePath -> m ()
 copyDiskRootfsImage = undefined
+
+(</>) :: FilePath -> FilePath -> FilePath
+(</>) a b
+    | F.isRelative b = a F.</> b
+    | otherwise = a F.</> F.makeRelative "/" b
