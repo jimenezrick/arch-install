@@ -93,8 +93,8 @@ mountDiskSubvols rootfsPath rootfsMnt subvols = do
         fromString
             [i|Mounting BTRFS subvolumes of #{rootfsPath}: [#{unwords $ map (\(v,p) -> v ++ ":" ++ p) subvols}]|]
     forM_ subvols $ \(subvol, subvolPath) -> do
-        createDirectoryIfMissing False $ rootfsMnt </> subvolPath
-        mountSubvol rootfsPath (rootfsMnt </> subvolPath) subvol
+        when (subvolPath /= "/") $ createDirectoryIfMissing True $ rootfsMnt </> subvolPath
+        mountSubvol subvol rootfsPath (rootfsMnt </> subvolPath)
 
 --
 -- TODO: Review
