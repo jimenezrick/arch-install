@@ -32,6 +32,7 @@ executable arch-rebuild
                      , optparse-generic
                      , mtl
                      , rio
+                     , unliftio
                      , interpolate
                      , dhall
                      , o-clock
@@ -40,3 +41,4 @@ executable arch-rebuild
                      , aeson
                      , string-conversions
                      , uuid
+                     , binary

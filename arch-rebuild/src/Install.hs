@@ -1,6 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Install
     ( buildRootfs
@@ -9,13 +9,14 @@ module Install
 
 import RIO
 import RIO.Directory
-import RIO.FilePath (takeDirectory)
+import RIO.FilePath ((<.>), makeRelative, replaceDirectory, takeDirectory)
 
 import qualified RIO.FilePath as F
 import qualified RIO.Text as T
 
 import Data.String.Interpolate
 import Data.Text.IO (writeFile)
+import UnliftIO.Environment (getExecutablePath)
 
 import Command
 import Config
@@ -32,9 +33,9 @@ buildRootfs sysConf = do
     mountDiskSubvols rootfsPath rootfsMnt $ sysConf ^. storage . rootSubvolumes
     mountEsp
     bootstrapArch
-    -- TODO: arch-chroot run settings
+    configureArchChroot
     -- TODO: prepare bootloader
-    personalCustomization
+    applyPersonalTweaks
     umountAllUnder rootfsMnt
   where
     espPath = sysConf ^. storage . espImage
@@ -66,7 +67,19 @@ buildRootfs sysConf = do
         let fstabPath = rootfsMnt </> "/etc/fstab"
         logInfo $ fromString [i|Rendering fstab to: #{fstabPath}|]
         liftIO $ writeFile fstabPath =<< renderFstab (sysConf ^. storage . fstabEntries)
-    personalCustomization = do
+    configureArchChroot = do
+        logInfo $ fromString [i|Copying binary to chroot: #{rootfsMnt}|]
+        let chrootDest = rootfsMnt </> "arch-rebuild"
+        createDirectory chrootDest
+        (chrootBin, chrootConf) <- copyExecutableWithConfig sysConf chrootDest
+        let chrootBin' = makeRelative rootfsMnt chrootBin
+            chrootConf' = makeRelative rootfsMnt chrootConf
+        logInfo $ fromString [i|Configuring chroot on: #{rootfsMnt}|]
+        runCmd_
+            [i|arch-chroot #{rootfsMnt} #{chrootBin'} configure-chroot --bin-conf-path #{chrootConf'}|]
+        logInfo $ fromString [i|Cleaning up binary in chroot: #{rootfsMnt}|]
+        removeDirectoryRecursive chrootDest
+    applyPersonalTweaks = do
         logInfo $ fromString [i|Customizing rootfs on: #{rootfsMnt}|]
         createDirectoryIfMissing True $ rootfsMnt </> "/mnt/scratch"
         createDirectoryIfMissing True $ rootfsMnt </> "/mnt/garage"
@@ -134,3 +147,12 @@ copyDiskRootfsImage = undefined
 (</>) a b
     | F.isRelative b = a F.</> b
     | otherwise = a F.</> F.makeRelative "/" b
+
+copyExecutableWithConfig :: MonadIO m => SystemConfig -> FilePath -> m (FilePath, FilePath)
+copyExecutableWithConfig sysConf destPath = do
+    execPath <- getExecutablePath
+    let execDest = replaceDirectory execPath destPath
+        confDest = execDest <.> "conf"
+    copyFile execPath execDest
+    saveBinSystemConfig confDest sysConf
+    return (execDest, confDest)

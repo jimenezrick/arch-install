@@ -8,6 +8,7 @@ module Config where
 import RIO
 
 import Control.Lens
+import Data.Binary
 import Dhall
 
 import qualified RIO.Text as T
@@ -22,6 +23,8 @@ data BlockDev
 
 instance Interpret BlockDev
 
+instance Binary BlockDev
+
 makeLenses ''BlockDev
 
 data FstabEntry = FstabEntry
@@ -35,6 +38,8 @@ data FstabEntry = FstabEntry
 
 instance Interpret FstabEntry
 
+instance Binary FstabEntry
+
 makeLenses ''FstabEntry
 
 data BootEntries = BootEntries
@@ -44,6 +49,8 @@ data BootEntries = BootEntries
 
 instance Interpret BootEntries
 
+instance Binary BootEntries
+
 makeLenses ''BootEntries
 
 data BootConfig = BootConfig
@@ -52,6 +59,8 @@ data BootConfig = BootConfig
     } deriving (Show, Generic)
 
 instance Interpret BootConfig
+
+instance Binary BootConfig
 
 makeLenses ''BootConfig
 
@@ -67,6 +76,8 @@ data StorageConfig = StorageConfig
 
 instance Interpret StorageConfig
 
+instance Binary StorageConfig
+
 makeLenses ''StorageConfig
 
 data PacmanConfig = PacmanConfig
@@ -77,6 +88,8 @@ data PacmanConfig = PacmanConfig
     } deriving (Show, Generic)
 
 instance Interpret PacmanConfig
+
+instance Binary PacmanConfig
 
 makeLenses ''PacmanConfig
 
@@ -91,6 +104,8 @@ data SystemConfig = SystemConfig
 
 instance Interpret SystemConfig
 
+instance Binary SystemConfig
+
 makeLenses ''SystemConfig
 
 auto' :: Interpret a => Type a
@@ -98,3 +113,9 @@ auto' = autoWith (defaultInterpretOptions {fieldModifier = T.dropWhile (== '_')}
 
 loadSystemConfig :: MonadIO m => FilePath -> m SystemConfig
 loadSystemConfig path' = liftIO $ inputFile auto' path'
+
+saveBinSystemConfig :: MonadIO m => FilePath -> SystemConfig -> m ()
+saveBinSystemConfig path' sysConf = writeFileBinary path' . toStrictBytes $ encode sysConf
+
+loadBinSystemConfig :: MonadIO m => FilePath -> m SystemConfig
+loadBinSystemConfig path' = decode . fromStrictBytes <$> readFileBinary path'

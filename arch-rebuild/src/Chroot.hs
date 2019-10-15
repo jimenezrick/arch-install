@@ -11,8 +11,6 @@ import Data.String.Interpolate
 import Command
 import Config
 
--- TODO: copy in chroot with the config and run
--- TODO: Has SystemConfig
 prepareChroot :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
 prepareChroot SystemConfig {..} =
     runCmds_

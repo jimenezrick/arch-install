@@ -14,19 +14,17 @@ import RIO.Process
 import RIO.Text (pack)
 
 import Options.Generic
-import System.Environment (getProgName)
+import UnliftIO.Environment (getProgName)
 
 import Checks
+import Chroot
 import Config
 import Install
 
---
--- TODO: be able to grab the Dhall config from HTTP
---
 data CmdOpts
     = CopyDiskRootfsImage { confPath :: FilePath }
     | BuildRootfs { confPath :: FilePath }
-    | PrepareChroot { chrootPath :: FilePath } -- XXX: fork and prepare the chroot
+    | ConfigureChroot { binConfPath :: FilePath }
     deriving (Generic)
 
 instance ParseRecord CmdOpts where
@@ -54,6 +52,9 @@ main = do
                 BuildRootfs confPath -> do
                     sysConf <- loadSystemConfig $ confPath </> "system.dhall"
                     buildRootfs sysConf
+                ConfigureChroot binConfPath -> do
+                    sysConf <- loadBinSystemConfig binConfPath
+                    prepareChroot sysConf
     runApp $ do
         doPreInstallChecks
         catch run (\(ex :: SomeException) -> logError (displayShow ex) >> liftIO exitFailure)
