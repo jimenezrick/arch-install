@@ -22,9 +22,10 @@ import Config
 import Install
 
 data CmdOpts
-    = CopyDiskRootfsImage { confPath :: FilePath }
-    | BuildRootfs { confPath :: FilePath }
+    = BuildRootfs { confPath :: FilePath }
     | ConfigureChroot { binConfPath :: FilePath }
+    | InstallBootloaderChroot { binConfPath :: FilePath }
+    | CopyDiskImages { confPath :: FilePath }
     deriving (Generic)
 
 instance ParseRecord CmdOpts where
@@ -46,15 +47,20 @@ main = do
     cmd <- pack <$> getProgName >>= getRecord
     let run =
             case cmd of
-                CopyDiskRootfsImage confPath -> do
-                    sysConf <- loadSystemConfig $ confPath </> "system.dhall"
-                    copyDiskRootfsImage confPath
                 BuildRootfs confPath -> do
                     sysConf <- loadSystemConfig $ confPath </> "system.dhall"
                     buildRootfs sysConf
                 ConfigureChroot binConfPath -> do
                     sysConf <- loadBinSystemConfig binConfPath
-                    prepareChroot sysConf
+                    configureArch sysConf
+                InstallBootloaderChroot binConfPath -> do
+                    sysConf <- loadBinSystemConfig binConfPath
+                    installBootloader sysConf
+                CopyDiskImages confPath
+                    -- TODO: check target disk isn't mounted
+                 -> do
+                    sysConf <- loadSystemConfig $ confPath </> "system.dhall"
+                    copyDiskRootfsImage confPath
     runApp $ do
         doPreInstallChecks
         catch run (\(ex :: SomeException) -> logError (displayShow ex) >> liftIO exitFailure)

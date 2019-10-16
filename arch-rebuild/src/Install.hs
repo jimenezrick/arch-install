@@ -9,20 +9,20 @@ module Install
 
 import RIO
 import RIO.Directory
-import RIO.FilePath ((<.>), makeRelative, replaceDirectory, takeDirectory)
+import RIO.FilePath (takeDirectory)
 
-import qualified RIO.FilePath as F
 import qualified RIO.Text as T
 
 import Data.String.Interpolate
 import Data.Text.IO (writeFile)
-import UnliftIO.Environment (getExecutablePath)
 
+import Chroot
 import Command
 import Config
 import Disk
 import Filesystem
 import Fstab
+import Util
 
 buildRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
 buildRootfs sysConf = do
@@ -33,8 +33,7 @@ buildRootfs sysConf = do
     mountDiskSubvols rootfsPath rootfsMnt $ sysConf ^. storage . rootSubvolumes
     mountEsp
     bootstrapArch
-    configureArchChroot
-    -- TODO: prepare bootloader
+    configureArchChroot sysConf rootfsMnt
     applyPersonalTweaks
     umountAllUnder rootfsMnt
   where
@@ -67,18 +66,6 @@ buildRootfs sysConf = do
         let fstabPath = rootfsMnt </> "/etc/fstab"
         logInfo $ fromString [i|Rendering fstab to: #{fstabPath}|]
         liftIO $ writeFile fstabPath =<< renderFstab (sysConf ^. storage . fstabEntries)
-    configureArchChroot = do
-        logInfo $ fromString [i|Copying binary to chroot: #{rootfsMnt}|]
-        let chrootDest = rootfsMnt </> "arch-rebuild"
-        createDirectory chrootDest
-        (chrootBin, chrootConf) <- copyExecutableWithConfig sysConf chrootDest
-        let chrootBin' = makeRelative rootfsMnt chrootBin
-            chrootConf' = makeRelative rootfsMnt chrootConf
-        logInfo $ fromString [i|Configuring chroot on: #{rootfsMnt}|]
-        runCmd_
-            [i|arch-chroot #{rootfsMnt} #{chrootBin'} configure-chroot --bin-conf-path #{chrootConf'}|]
-        logInfo $ fromString [i|Cleaning up binary in chroot: #{rootfsMnt}|]
-        removeDirectoryRecursive chrootDest
     applyPersonalTweaks = do
         logInfo $ fromString [i|Customizing rootfs on: #{rootfsMnt}|]
         createDirectoryIfMissing True $ rootfsMnt </> "/mnt/scratch"
@@ -142,17 +129,3 @@ partitionDisk blockdev = do
 --
 copyDiskRootfsImage :: (MonadIO m, MonadReader env m, HasLogFunc env) => FilePath -> m ()
 copyDiskRootfsImage = undefined
-
-(</>) :: FilePath -> FilePath -> FilePath
-(</>) a b
-    | F.isRelative b = a F.</> b
-    | otherwise = a F.</> F.makeRelative "/" b
-
-copyExecutableWithConfig :: MonadIO m => SystemConfig -> FilePath -> m (FilePath, FilePath)
-copyExecutableWithConfig sysConf destPath = do
-    execPath <- getExecutablePath
-    let execDest = replaceDirectory execPath destPath
-        confDest = execDest <.> "conf"
-    copyFile execPath execDest
-    saveBinSystemConfig confDest sysConf
-    return (execDest, confDest)
