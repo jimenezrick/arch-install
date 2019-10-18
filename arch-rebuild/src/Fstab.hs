@@ -27,14 +27,14 @@ renderFstab entries = unlines . map pack . concat <$> mapM renderDev entries
             FsUUID {_uuid} -> return [formatEntry [i|UUID=#{_uuid}|] entry]
             DevPath {_path} -> return [formatEntry [i|#{_path}|] entry]
             DiskModel {_model} -> do
-                disk <- Disk.getDiskInfo _model
+                disk <- Disk.findDiskDevice _model >>= Disk.getDiskInfo
                 case disk of
                     Disk.DiskWithPartitionsInfo {} ->
                         throwString "expecting a disk without partitions"
                     Disk.DiskInfo {Disk.uuid} ->
                         return [[i|# #{_model}|], formatEntry [i|UUID=#{uuid}|] entry]
             Partition {_diskModel, _partNum} -> do
-                disk <- Disk.getDiskInfo _diskModel
+                disk <- Disk.findDiskDevice _diskModel >>= Disk.getDiskInfo
                 case disk of
                     Disk.DiskInfo {} -> throwString "expecting a disk with partitions"
                     Disk.DiskWithPartitionsInfo {Disk.partitions} -> do

@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DeriveGeneric #-}
 
@@ -58,16 +59,15 @@ data PartitionInfo = PartitionInfo
     , partMounted :: Bool
     } deriving (Show, Generic)
 
-getDiskInfo :: MonadIO m => Text -> m DiskInfo
-getDiskInfo model = do
-    dev <- findDiskDevice model
+getDiskInfo :: MonadIO m => FilePath -> m DiskInfo
+getDiskInfo dev = do
     (j :: Value) <-
         throwLeft $ eitherDecode' <$> readProcessStdout_ (fromString [i|lsblk --json -O #{dev}|])
     let disk = j ^?! key "blockdevices" . _Array . _head
     case disk ^? key "children" . _Array . to toList of
         Nothing -> do
             uuid <- getDevUuid dev
-            mounted <- isDiskMounted dev
+            mounted <- isDevMounted dev
             return DiskInfo {..}
         Just children -> do
             partitions <- mapM getPartInfo children
@@ -78,7 +78,7 @@ getDiskInfo model = do
         case p ^?! key "uuid" of
             String s -> do
                 partUuid <- maybe (throwString "Cannot parse invalid UUID") return (fromText s)
-                partMounted <- isDiskMounted partDev
+                partMounted <- isDevMounted partDev
                 return PartitionInfo {..}
             _ -> throwString "Partition does not have an UUID"
 
@@ -92,9 +92,17 @@ findDiskDevice model = do
         [] -> throwString "Device not found"
         _ -> throwString "Could not uniquely identify the device"
 
-isDiskMounted :: MonadIO m => FilePath -> m Bool
-isDiskMounted device = do
+isDevMounted :: MonadIO m => FilePath -> m Bool
+isDevMounted device = do
     (j :: Value) <-
         throwLeft $ eitherDecode' <$> readProcessStdout_ "findmnt --json --real -o source"
     return . not . null $ j ^?! key "filesystems" . _Array ^.. folded .
         filtered (\fs -> fs ^? key "source" . _String . _Text == Just device)
+
+isDiskMounted :: MonadIO m => FilePath -> m Bool
+isDiskMounted device = do
+    info <- getDiskInfo device
+    return $
+        case info of
+            DiskInfo {mounted} -> mounted
+            DiskWithPartitionsInfo {partitions} -> any partMounted partitions
