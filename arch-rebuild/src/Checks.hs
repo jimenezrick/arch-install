@@ -12,16 +12,27 @@ import RIO.Process
 import System.Posix.User (getEffectiveUserID)
 import Time.Units (Second, Time(..), threadDelay)
 
+import Config
+import Disk
 import Match
+
+exitIfNot :: MonadIO m => m a -> Bool -> m ()
+exitIfNot f b = unless b (f >> void (liftIO exitFailure))
+
+doPreCopyChecks :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
+doPreCopyChecks sysConf = do
+    logInfo "Doing pre-copy checks"
+    rootDiskDev <- findDiskDevice $ sysConf ^. storage . rootDiskModel
+    not <$> isDiskMounted rootDiskDev >>=
+        exitIfNot (logError "target root disk is currently mounted")
 
 doPreInstallChecks :: (MonadUnliftIO m, MonadReader env m, HasLogFunc env) => m ()
 doPreInstallChecks = do
+    logInfo "Doing pre-install checks"
     amIRoot >>= exitIfNot (logError "must be run as root")
     isUefiSystem >>= exitIfNot (logError "not booted in UEFI mode")
     isNetworkReady >>= exitIfNot (logError "network not ready")
     isClockSynced >>= exitIfNot (logError "clock not in sync")
-  where
-    exitIfNot f b = unless b (f >> void (liftIO exitFailure))
 
 amIRoot :: MonadIO m => m Bool
 amIRoot = (== 0) <$> liftIO getEffectiveUserID

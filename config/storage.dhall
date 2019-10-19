@@ -2,6 +2,8 @@
     ./boot.dhall
 , fstabEntries =
     ./fstab.dhall
+, rootDiskModel =
+    "Samsung_SSD_850_PRO_512GB"
 , espImage =
     "../imgs/esp.img"
 , rootfsImage =

@@ -23,8 +23,7 @@ import Install
 
 data CmdOpts
     = BuildRootfs { confPath :: FilePath }
-    | ConfigureChroot { binConfPath :: FilePath }
-    | InstallBootloaderChroot { binConfPath :: FilePath }
+    | ConfigureRootfsChroot { binConfPath :: FilePath }
     | CopyDiskImages { confPath :: FilePath }
     deriving (Generic)
 
@@ -46,23 +45,23 @@ main :: IO ()
 main = do
     cmd <- pack <$> getProgName >>= getRecord
     let run =
-            case cmd of
+            case cmd
+                -- TODO: fetch /etc + /home BTRFS subvols
+                  of
                 BuildRootfs confPath -> do
+                    doPreInstallChecks
                     sysConf <- loadSystemConfig $ confPath </> "system.dhall"
                     buildRootfs sysConf
-                ConfigureChroot binConfPath -> do
+                ConfigureRootfsChroot binConfPath -> do
                     sysConf <- loadBinSystemConfig binConfPath
-                    configureArch sysConf
-                InstallBootloaderChroot binConfPath -> do
-                    sysConf <- loadBinSystemConfig binConfPath
-                    installBootloader sysConf
-                CopyDiskImages confPath
-                    -- TODO: check target disk isn't mounted
-                 -> do
+                    configureRootfs sysConf
+                CopyDiskImages confPath -> do
+                    doPreInstallChecks
                     sysConf <- loadSystemConfig $ confPath </> "system.dhall"
-                    copyDiskRootfsImage confPath
+                    doPreCopyChecks sysConf
+                    copyDiskRootfsImage sysConf
+                    -- XXX installBootloader sysConf
     runApp $ do
-        doPreInstallChecks
         catch run (\(ex :: SomeException) -> logError (displayShow ex) >> liftIO exitFailure)
         logInfo "Done"
 

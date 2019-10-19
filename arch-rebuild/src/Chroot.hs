@@ -15,6 +15,9 @@ import Command
 import Config
 import Util
 
+installBootloader :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
+installBootloader SystemConfig {..} = runCmd_ [i|bootctl install|]
+
 runBinInChroot ::
        (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> FilePath -> String -> m ()
 runBinInChroot sysConf rootfsMnt binCmd = do
@@ -29,20 +32,12 @@ runBinInChroot sysConf rootfsMnt binCmd = do
     logInfo $ fromString [i|Cleaning up binary in chroot: #{rootfsMnt}|]
     removeDirectoryRecursive chrootDest
 
-installBootloaderChroot ::
+configureRootfsChroot ::
        (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> FilePath -> m ()
-installBootloaderChroot sysConf rootfsMnt =
-    runBinInChroot sysConf rootfsMnt "install-bootloader-chroot"
+configureRootfsChroot sysConf rootfsMnt = runBinInChroot sysConf rootfsMnt "configure-rootfs-chroot"
 
-installBootloader :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
-installBootloader SystemConfig {..} = runCmd_ [i|bootctl install|]
-
-configureArchChroot ::
-       (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> FilePath -> m ()
-configureArchChroot sysConf rootfsMnt = runBinInChroot sysConf rootfsMnt "configure-chroot"
-
-configureArch :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
-configureArch SystemConfig {..} =
+configureRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
+configureRootfs SystemConfig {..} =
     runCmds_
         [ [i|ln -sf /usr/share/zoneinfo/#{_zoneInfo} /etc/localtime|]
         , [i|hwclock --systohc|]

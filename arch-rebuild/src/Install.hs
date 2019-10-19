@@ -33,7 +33,7 @@ buildRootfs sysConf = do
     mountDiskSubvols rootfsPath rootfsMnt $ sysConf ^. storage . rootSubvolumes
     mountEsp
     bootstrapArch
-    configureArchChroot sysConf rootfsMnt
+    configureRootfsChroot sysConf rootfsMnt
     applyPersonalTweaks
     umountAllUnder rootfsMnt
   where
@@ -124,8 +124,10 @@ partitionDisk blockdev = do
             (DiskModel model) -> findDiskDevice model
             (Partition _ _) -> throwString [i|block device cannot be a partition|]
 
---
--- TODO
---
-copyDiskRootfsImage :: (MonadIO m, MonadReader env m, HasLogFunc env) => FilePath -> m ()
-copyDiskRootfsImage = undefined
+copyDiskRootfsImage :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
+copyDiskRootfsImage sysConf = do
+    let model = sysConf ^. storage . rootDiskModel
+    logInfo $ fromString [i|Copying system image to disk: #{model}|]
+    --
+    -- TODO
+    --

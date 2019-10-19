@@ -67,6 +67,7 @@ makeLenses ''BootConfig
 data StorageConfig = StorageConfig
     { _boot :: BootConfig
     , _fstabEntries :: [FstabEntry]
+    , _rootDiskModel :: Text
     , _espImage :: FilePath
     , _rootfsImage :: FilePath
     , _espImageSize :: Text
