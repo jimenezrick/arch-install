@@ -15,10 +15,11 @@ import qualified RIO.Text as T
 
 data BlockDev
     = FsUUID { _uuid :: Text }
+    | PartUUID { _partUuid :: Text }
     | DevPath { _path :: FilePath }
     | DiskModel { _model :: Text }
-    | Partition { _diskModel :: Text
-                , _partNum :: Natural }
+    | DiskPartitionModel { _diskModel :: Text
+                         , _partNum :: Natural }
     deriving (Show, Generic)
 
 instance Interpret BlockDev

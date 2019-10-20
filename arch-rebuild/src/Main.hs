@@ -14,6 +14,7 @@ import RIO.Process
 import RIO.Text (pack)
 
 import Options.Generic
+import Text.Show.Pretty (pPrint)
 import UnliftIO.Environment (getProgName)
 
 import Checks
@@ -25,6 +26,9 @@ data CmdOpts
     = BuildRootfs { confPath :: FilePath }
     | ConfigureRootfsChroot { binConfPath :: FilePath }
     | CopyDiskImages { confPath :: FilePath }
+    | SaveBuildInfo { confPath :: FilePath
+                    , destPath :: FilePath }
+    | ShowBuildInfo { binConfPath :: FilePath }
     deriving (Generic)
 
 instance ParseRecord CmdOpts where
@@ -61,6 +65,12 @@ main = do
                     doPreCopyChecks sysConf
                     copyDiskRootfsImage sysConf
                     -- XXX installBootloader sysConf
+                SaveBuildInfo confPath destPath -> do
+                    sysConf <- loadSystemConfig $ confPath </> "system.dhall"
+                    saveBinSystemConfig (destPath </> "system-build.info") sysConf
+                ShowBuildInfo binConfPath -> do
+                    sysConf <- loadBinSystemConfig $ binConfPath </> "system-build.info"
+                    liftIO $ pPrint sysConf
     runApp $ do
         catch run (\(ex :: SomeException) -> logError (displayShow ex) >> liftIO exitFailure)
         logInfo "Done"

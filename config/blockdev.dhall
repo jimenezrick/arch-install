@@ -1,9 +1,11 @@
 < FsUUID :
     { uuid : Text }
+| PartUUID :
+    { partUuid : Text }
 | DevPath :
     { path : Text }
 | DiskModel :
     { model : Text }
-| Partition :
+| DiskPartitionModel :
     { diskModel : Text, partNum : Natural }
 >

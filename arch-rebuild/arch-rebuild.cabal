@@ -43,3 +43,4 @@ executable arch-rebuild
                      , string-conversions
                      , uuid
                      , binary
+                     , pretty-show

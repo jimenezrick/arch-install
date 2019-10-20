@@ -122,7 +122,7 @@ partitionDisk blockdev = do
         case blockdev of
             (DevPath path) -> return path
             (DiskModel model) -> findDiskDevice model
-            (Partition _ _) -> throwString [i|block device cannot be a partition|]
+            (DiskPartitionModel _ _) -> throwString [i|block device cannot be a partition|]
 
 copyDiskRootfsImage :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
 copyDiskRootfsImage sysConf = do
