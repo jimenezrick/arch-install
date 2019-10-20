@@ -6,7 +6,7 @@ module Chroot where
 
 import RIO
 import RIO.Directory
-import RIO.FilePath ((<.>), makeRelative, replaceDirectory)
+import RIO.FilePath (makeRelative, replaceDirectory, replaceFileName, takeFileName)
 
 import Data.String.Interpolate
 import UnliftIO.Environment (getExecutablePath)
@@ -21,16 +21,11 @@ installBootloader SystemConfig {..} = runCmd_ [i|bootctl install|]
 runBinInChroot ::
        (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> FilePath -> String -> m ()
 runBinInChroot sysConf rootfsMnt binCmd = do
-    logInfo $ fromString [i|Copying binary to chroot: #{rootfsMnt}|]
-    let chrootDest = rootfsMnt </> "arch-rebuild"
-    createDirectory chrootDest
-    (chrootBin, chrootConf) <- copyExecutableWithConfig sysConf chrootDest
+    (chrootBin, chrootConf) <- copyExecutableWithBuildInfo sysConf rootfsMnt
     let chrootBin' = makeRelative rootfsMnt chrootBin
         chrootConf' = makeRelative rootfsMnt chrootConf
-    logInfo $ fromString [i|Running inside chroot #{rootfsMnt}: #{binCmd}|]
+    logInfo $ fromString [i|Running within chroot #{rootfsMnt}: #{binCmd}|]
     runCmd_ [i|arch-chroot #{rootfsMnt} #{chrootBin'} #{binCmd} --bin-conf-path #{chrootConf'}|]
-    logInfo $ fromString [i|Cleaning up binary in chroot: #{rootfsMnt}|]
-    removeDirectoryRecursive chrootDest
 
 configureRootfsChroot ::
        (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> FilePath -> m ()
@@ -66,11 +61,21 @@ configureRootfs SystemConfig {..} =
         ]
         -- FIXME: shutdown error (https://github.com/systemd/systemd/issues/8155)
 
-copyExecutableWithConfig :: MonadIO m => SystemConfig -> FilePath -> m (FilePath, FilePath)
-copyExecutableWithConfig sysConf destPath = do
+copyExecutableWithBuildInfo ::
+       (MonadIO m, MonadReader env m, HasLogFunc env)
+    => SystemConfig
+    -> FilePath
+    -> m (FilePath, FilePath)
+copyExecutableWithBuildInfo sysConf rootfsMnt = do
     execPath <- getExecutablePath
-    let execDest = replaceDirectory execPath destPath
-        confDest = execDest <.> "conf"
-    copyFile execPath execDest
-    saveBinSystemConfig confDest sysConf
+    let execName = takeFileName execPath
+        chrootDest = rootfsMnt </> execName
+        execDest = replaceDirectory execPath chrootDest
+        confDest = replaceFileName execDest "system-build.info"
+    isCopied <- doesDirectoryExist chrootDest
+    unless isCopied $ do
+        logInfo $ fromString [i|Copying binary to chroot: #{rootfsMnt}|]
+        createDirectory chrootDest
+        copyFile execPath execDest
+        saveBinSystemConfig confDest sysConf
     return (execDest, confDest)
