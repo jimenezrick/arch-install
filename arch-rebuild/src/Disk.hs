@@ -24,24 +24,30 @@ import Error
 data InstallDiskInfo = InstallDiskInfo
     { devEsp :: FilePath
     , devRootfs :: FilePath
-    , uuidEsp :: UUID
-    , uuidRootfs :: UUID
+    , partUuidEsp :: UUID
+    , partUuidRootfs :: UUID
     } deriving (Show)
 
 getInstallDiskInfo :: MonadIO m => FilePath -> m InstallDiskInfo
 getInstallDiskInfo device = do
     let devEsp = [i|#{device}1|]
         devRootfs = [i|#{device}2|]
-    uuidEsp <- getDevUuid devEsp
-    uuidRootfs <- getDevUuid devRootfs
+    partUuidEsp <- getDevPartUuid devEsp
+    partUuidRootfs <- getDevPartUuid devRootfs
     return InstallDiskInfo {..}
 
 getDevUuid :: MonadIO m => FilePath -> m UUID
-getDevUuid device = do
+getDevUuid = getDevUuid' "uuid"
+
+getDevPartUuid :: MonadIO m => FilePath -> m UUID
+getDevPartUuid = getDevUuid' "partuuid"
+
+getDevUuid' :: MonadIO m => Text -> FilePath -> m UUID
+getDevUuid' field device = do
     (j :: Value) <-
         throwLeft $ eitherDecode' <$>
-        readProcessStdout_ (fromString [i|lsblk --json --nodeps -o uuid #{device}|])
-    case j ^?! key "blockdevices" . _Array . _head . key "uuid" of
+        readProcessStdout_ (fromString [i|lsblk --json --nodeps -o #{field} #{device}|])
+    case j ^?! key "blockdevices" . _Array . _head . key field of
         String s -> maybe (throwString "Cannot parse invalid UUID") return (fromText s)
         _ -> throwString "Device does not have an UUID"
 
@@ -75,7 +81,7 @@ getDiskInfo dev = do
   where
     getPartInfo p = do
         let partDev = p ^?! key "path" . _String . _Text
-        case p ^?! key "uuid" of
+        case p ^?! key "partuuid" of
             String s -> do
                 partUuid <- maybe (throwString "Cannot parse invalid UUID") return (fromText s)
                 partMounted <- isDevMounted partDev
