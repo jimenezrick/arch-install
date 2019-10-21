@@ -27,7 +27,7 @@ data CmdOpts
     | ConfigureRootfsChroot { binConfPath :: FilePath }
     | CopyDiskImages { confPath :: FilePath }
     | SaveBuildInfo { confPath :: FilePath
-                    , destPath :: FilePath }
+                    , destDir :: FilePath }
     | ShowBuildInfo { binConfPath :: FilePath }
     deriving (Generic)
 
@@ -54,22 +54,22 @@ main = do
                   of
                 BuildRootfs confPath -> do
                     doPreInstallChecks
-                    sysConf <- loadSystemConfig $ confPath </> "system.dhall"
+                    sysConf <- loadSystemConfig $ confPath
                     buildRootfs sysConf
                 ConfigureRootfsChroot binConfPath -> do
                     sysConf <- loadBinSystemConfig binConfPath
                     configureRootfs sysConf
                 CopyDiskImages confPath -> do
                     doPreInstallChecks
-                    sysConf <- loadSystemConfig $ confPath </> "system.dhall"
+                    sysConf <- loadSystemConfig $ confPath
                     doPreCopyChecks sysConf
                     copyDiskRootfsImage sysConf
                     -- XXX installBootloader sysConf
-                SaveBuildInfo confPath destPath -> do
-                    sysConf <- loadSystemConfig $ confPath </> "system.dhall"
-                    saveBinSystemConfig (destPath </> "system-build.info") sysConf
+                SaveBuildInfo confPath destDir -> do
+                    sysConf <- loadSystemConfig $ confPath
+                    saveBinSystemConfig (destDir </> "system-build.info") sysConf
                 ShowBuildInfo binConfPath -> do
-                    sysConf <- loadBinSystemConfig $ binConfPath </> "system-build.info"
+                    sysConf <- loadBinSystemConfig $ binConfPath
                     liftIO $ pPrint sysConf
     runApp $ do
         catch run (\(ex :: SomeException) -> logError (displayShow ex) >> liftIO exitFailure)
