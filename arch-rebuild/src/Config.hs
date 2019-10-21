@@ -114,7 +114,7 @@ auto' :: Interpret a => Type a
 auto' = autoWith (defaultInterpretOptions {fieldModifier = T.dropWhile (== '_')})
 
 loadSystemConfig :: MonadIO m => FilePath -> m SystemConfig
-loadSystemConfig path' = liftIO $ inputFile auto' path'
+loadSystemConfig path' = liftIO $ input auto' $ T.pack path'
 
 saveBinSystemConfig :: MonadIO m => FilePath -> SystemConfig -> m ()
 saveBinSystemConfig path' sysConf = writeFileBinary path' . toStrictBytes $ encode sysConf
