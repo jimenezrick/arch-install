@@ -20,6 +20,7 @@ import UnliftIO.Environment (getProgName)
 import Checks
 import Chroot
 import Config
+import FsTree
 import Install
 
 data CmdOpts
@@ -63,7 +64,7 @@ main = do
                 ConfigureRootfs binConfPath -> do
                     sysConf <- loadBinSystemConfig binConfPath
                     configureRootfs sysConf
-                    -- TODO: run here user customizations?
+                    customizeRootfs
                 CopyDiskImages confPath -> do
                     doPreInstallChecks
                     sysConf <- loadSystemConfig $ confPath
@@ -88,3 +89,12 @@ runApp m =
         withLogFunc lo $ \lf ->
             let simpleApp = App {saLogFunc = lf, saProcessContext = pc}
              in runRIO simpleApp m
+
+customizeRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => m ()
+customizeRootfs = do
+    logInfo "Customizing rootfs"
+    createFsTree $
+        Dir
+            "/mnt"
+            defAttrs
+            [Dir "scratch" defAttrs [], Dir "garage" defAttrs [], Dir "usb" defAttrs []]

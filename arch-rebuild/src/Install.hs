@@ -34,7 +34,6 @@ buildRootfs sysConf = do
     mountEsp
     bootstrapArch
     configureRootfsChroot sysConf rootfsMnt
-    applyPersonalTweaks
     umountAllUnder rootfsMnt
   where
     espPath = sysConf ^. storage . espImage
@@ -66,11 +65,6 @@ buildRootfs sysConf = do
         let fstabPath = rootfsMnt <//> "/etc/fstab"
         logInfo $ fromString [i|Rendering fstab to: #{fstabPath}|]
         liftIO $ writeFile fstabPath =<< renderFstab (sysConf ^. storage . fstabEntries)
-    applyPersonalTweaks = do
-        logInfo $ fromString [i|Customizing rootfs on: #{rootfsMnt}|]
-        createDirectoryIfMissing True $ rootfsMnt <//> "/mnt/scratch"
-        createDirectoryIfMissing True $ rootfsMnt <//> "/mnt/garage"
-        createDirectoryIfMissing True $ rootfsMnt <//> "/mnt/usb"
 
 createDiskSubvols ::
        (MonadIO m, MonadReader env m, HasLogFunc env) => FilePath -> FilePath -> [String] -> m ()

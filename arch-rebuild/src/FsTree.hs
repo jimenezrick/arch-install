@@ -6,6 +6,7 @@ module FsTree
     , Content(..)
     , defAttrs
     , createFsTree
+    , createFsTreeAt
     ) where
 
 import RIO
@@ -40,8 +41,11 @@ data FsTree
 defAttrs :: Attrs
 defAttrs = def
 
-createFsTree :: MonadIO m => FilePath -> FsTree -> m ()
-createFsTree base fstree =
+createFsTree :: MonadIO m => FsTree -> m ()
+createFsTree = createFsTreeAt "."
+
+createFsTreeAt :: MonadIO m => FilePath -> FsTree -> m ()
+createFsTreeAt base fstree =
     liftIO $ do
         createFile base fstree
         applyAttrs base fstree
