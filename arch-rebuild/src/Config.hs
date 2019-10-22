@@ -84,8 +84,8 @@ makeLenses ''StorageConfig
 
 data PacmanConfig = PacmanConfig
     { _mirrorlist :: Text
-    , _explicitPackages :: [Text]
-    , _packageGroups :: [Text]
+    , _packages :: [Text]
+    , _groups :: [Text]
     , _aurPackages :: [Text]
     } deriving (Show, Generic)
 
@@ -101,7 +101,7 @@ data SystemConfig = SystemConfig
     , _locale :: Text
     , _keymap :: Text
     , _storage :: StorageConfig
-    , _packages :: PacmanConfig
+    , _pacman :: PacmanConfig
     } deriving (Show, Generic)
 
 instance Interpret SystemConfig

@@ -1,8 +1,8 @@
 { mirrorlist =
     ./pacman/mirrorlist as Text
-, explicitPackages =
-    ./pacman/explicit.dhall
-, packageGroups =
+, packages =
+    ./pacman/packages.dhall
+, groups =
     ./pacman/groups.dhall
 , aurPackages =
     ./pacman/aur.dhall

@@ -57,12 +57,12 @@ buildRootfs sysConf = do
         mountLoopImage espPath espMnt
     bootstrapArch = do
         logInfo $ fromString [i|Bootstrapping Arch on: #{rootfsMnt}|]
-        let pkgList = T.unwords $ sysConf ^. packages . explicitPackages
-            grpList = T.unwords $ sysConf ^. packages . packageGroups
+        let pkgList = T.unwords $ sysConf ^. pacman . packages
+            grpList = T.unwords $ sysConf ^. pacman . groups
         runCmd_ [i|pacstrap #{rootfsMnt} #{pkgList} #{grpList}|]
         let mirrorlistPath = rootfsMnt </> "/etc/pacman.d/mirrorlist"
         logInfo $ fromString [i|Copying mirrorlist to: #{mirrorlistPath}|]
-        liftIO $ writeFile mirrorlistPath $ sysConf ^. packages . mirrorlist
+        liftIO $ writeFile mirrorlistPath $ sysConf ^. pacman . mirrorlist
         let fstabPath = rootfsMnt </> "/etc/fstab"
         logInfo $ fromString [i|Rendering fstab to: #{fstabPath}|]
         liftIO $ writeFile fstabPath =<< renderFstab (sysConf ^. storage . fstabEntries)

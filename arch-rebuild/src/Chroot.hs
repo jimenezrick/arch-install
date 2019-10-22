@@ -29,7 +29,7 @@ runBinInChroot sysConf rootfsMnt binCmd = do
 
 configureRootfsChroot ::
        (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> FilePath -> m ()
-configureRootfsChroot sysConf rootfsMnt = runBinInChroot sysConf rootfsMnt "configure-rootfs-chroot"
+configureRootfsChroot sysConf rootfsMnt = runBinInChroot sysConf rootfsMnt "configure-rootfs"
 
 configureRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
 configureRootfs SystemConfig {..} =

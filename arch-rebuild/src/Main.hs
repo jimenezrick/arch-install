@@ -23,8 +23,9 @@ import Config
 import Install
 
 data CmdOpts
-    = BuildRootfs { confPath :: FilePath }
-    | ConfigureRootfsChroot { binConfPath :: FilePath }
+    = LoadSystemConfig { confPath :: FilePath }
+    | BuildRootfs { confPath :: FilePath }
+    | ConfigureRootfs { binConfPath :: FilePath }
     | CopyDiskImages { confPath :: FilePath }
     | SaveBuildInfo { confPath :: FilePath
                     , destDir :: FilePath }
@@ -52,13 +53,17 @@ main = do
             case cmd
                 -- TODO: fetch /etc + /home BTRFS subvols
                   of
+                LoadSystemConfig confPath -> do
+                    sysConf <- loadSystemConfig $ confPath
+                    liftIO $ pPrint sysConf
                 BuildRootfs confPath -> do
                     doPreInstallChecks
                     sysConf <- loadSystemConfig $ confPath
                     buildRootfs sysConf
-                ConfigureRootfsChroot binConfPath -> do
+                ConfigureRootfs binConfPath -> do
                     sysConf <- loadBinSystemConfig binConfPath
                     configureRootfs sysConf
+                    -- TODO: run here user customizations?
                 CopyDiskImages confPath -> do
                     doPreInstallChecks
                     sysConf <- loadSystemConfig $ confPath

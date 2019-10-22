@@ -8,6 +8,6 @@
     "us"
 , storage =
     ./storage.dhall
-, packages =
+, pacman =
     ./pacman.dhall
 }
