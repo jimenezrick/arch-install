@@ -20,13 +20,15 @@ executable arch-rebuild
                      , Command
                      , Disk
                      , Filesystem
+                     , FilePath
+                     , FsTree
                      , Install
                      , Match
                      , Fstab
                      , Error
-                     , Util
 
   build-depends:       base ^>=4.12.0.0
+                     , data-default-class
                      , unix
                      , text
                      , attoparsec

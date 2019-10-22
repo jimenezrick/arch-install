@@ -13,7 +13,7 @@ import UnliftIO.Environment (getExecutablePath)
 
 import Command
 import Config
-import Util
+import FilePath ((<//>))
 
 installBootloader :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
 installBootloader SystemConfig {..} = runCmd_ [i|bootctl install|]
@@ -69,7 +69,7 @@ copyExecutableWithBuildInfo ::
 copyExecutableWithBuildInfo sysConf rootfsMnt = do
     execPath <- getExecutablePath
     let execName = takeFileName execPath
-        chrootDest = rootfsMnt </> execName
+        chrootDest = rootfsMnt <//> execName
         execDest = replaceDirectory execPath chrootDest
         confDest = replaceFileName execDest "system-build.info"
     isCopied <- doesDirectoryExist chrootDest

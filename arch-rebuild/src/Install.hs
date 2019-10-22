@@ -20,9 +20,9 @@ import Chroot
 import Command
 import Config
 import Disk
+import FilePath ((<//>))
 import Filesystem
 import Fstab
-import Util
 
 buildRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
 buildRootfs sysConf = do
@@ -39,8 +39,8 @@ buildRootfs sysConf = do
   where
     espPath = sysConf ^. storage . espImage
     rootfsPath = sysConf ^. storage . rootfsImage
-    rootfsMnt = takeDirectory rootfsPath </> "rootfs"
-    espMnt = rootfsMnt </> "boot"
+    rootfsMnt = takeDirectory rootfsPath <//> "rootfs"
+    espMnt = rootfsMnt <//> "boot"
     createImgs = do
         logInfo $ fromString [i|Creating ESP image: #{espPath}|]
         createZeroImage espPath $ sysConf ^. storage . espImageSize
@@ -60,17 +60,17 @@ buildRootfs sysConf = do
         let pkgList = T.unwords $ sysConf ^. pacman . packages
             grpList = T.unwords $ sysConf ^. pacman . groups
         runCmd_ [i|pacstrap #{rootfsMnt} #{pkgList} #{grpList}|]
-        let mirrorlistPath = rootfsMnt </> "/etc/pacman.d/mirrorlist"
+        let mirrorlistPath = rootfsMnt <//> "/etc/pacman.d/mirrorlist"
         logInfo $ fromString [i|Copying mirrorlist to: #{mirrorlistPath}|]
         liftIO $ writeFile mirrorlistPath $ sysConf ^. pacman . mirrorlist
-        let fstabPath = rootfsMnt </> "/etc/fstab"
+        let fstabPath = rootfsMnt <//> "/etc/fstab"
         logInfo $ fromString [i|Rendering fstab to: #{fstabPath}|]
         liftIO $ writeFile fstabPath =<< renderFstab (sysConf ^. storage . fstabEntries)
     applyPersonalTweaks = do
         logInfo $ fromString [i|Customizing rootfs on: #{rootfsMnt}|]
-        createDirectoryIfMissing True $ rootfsMnt </> "/mnt/scratch"
-        createDirectoryIfMissing True $ rootfsMnt </> "/mnt/garage"
-        createDirectoryIfMissing True $ rootfsMnt </> "/mnt/usb"
+        createDirectoryIfMissing True $ rootfsMnt <//> "/mnt/scratch"
+        createDirectoryIfMissing True $ rootfsMnt <//> "/mnt/garage"
+        createDirectoryIfMissing True $ rootfsMnt <//> "/mnt/usb"
 
 createDiskSubvols ::
        (MonadIO m, MonadReader env m, HasLogFunc env) => FilePath -> FilePath -> [String] -> m ()
@@ -79,7 +79,7 @@ createDiskSubvols rootfsPath rootfsMnt subvols = do
     logInfo $ fromString [i|Mounting rootfs on: #{rootfsMnt}|]
     mountLoopImage rootfsPath rootfsMnt
     logInfo $ fromString [i|Creating BTRFS subvolumes on #{rootfsPath}: [#{unwords subvols}]|]
-    forM_ subvols $ \subvol -> runCmd_ [i|btrfs subvolume create #{rootfsMnt </> subvol}|]
+    forM_ subvols $ \subvol -> runCmd_ [i|btrfs subvolume create #{rootfsMnt <//> subvol}|]
     umountPoint rootfsMnt
 
 mountDiskSubvols ::
@@ -93,8 +93,8 @@ mountDiskSubvols rootfsPath rootfsMnt subvols = do
         fromString
             [i|Mounting BTRFS subvolumes of #{rootfsPath}: [#{unwords $ map (\(v,p) -> v ++ ":" ++ p) subvols}]|]
     forM_ subvols $ \(subvol, subvolPath) -> do
-        when (subvolPath /= "/") $ createDirectoryIfMissing True $ rootfsMnt </> subvolPath
-        mountSubvol subvol rootfsPath (rootfsMnt </> subvolPath)
+        when (subvolPath /= "/") $ createDirectoryIfMissing True $ rootfsMnt <//> subvolPath
+        mountSubvol subvol rootfsPath (rootfsMnt <//> subvolPath)
 
 --
 -- TODO: Review
