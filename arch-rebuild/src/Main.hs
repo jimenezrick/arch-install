@@ -25,6 +25,7 @@ import Install
 
 data CmdOpts
     = LoadSystemConfig { confPath :: FilePath }
+    | WipeRootDisk { confPath :: FilePath }
     | BuildArch { confPath :: FilePath }
     | ConfigureRootfs { binConfPath :: FilePath }
     | SaveBuildInfo { confPath :: FilePath
@@ -56,10 +57,13 @@ main = do
                 LoadSystemConfig confPath -> do
                     sysConf <- loadSystemConfig $ confPath
                     liftIO $ pPrint sysConf
+                WipeRootDisk confPath -> do
+                    sysConf <- loadSystemConfig $ confPath
+                    doPreInstallChecks sysConf
+                    wipeRootDisk sysConf
                 BuildArch confPath -> do
                     sysConf <- loadSystemConfig $ confPath
-                    doPreInstallChecks
-                    doPreCopyChecks sysConf
+                    doPreInstallChecks sysConf
                     buildArch sysConf
                 ConfigureRootfs binConfPath -> do
                     sysConf <- loadBinSystemConfig binConfPath

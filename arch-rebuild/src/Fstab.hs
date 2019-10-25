@@ -43,6 +43,9 @@ renderFstab entries = unlines . map pack . concat <$> mapM renderDev entries
                         uuid <-
                             throwNothing "missing expected partition" $
                             return
-                                (fromList [(d, u) | (Disk.PartitionInfo d u _ _) <- partitions] ^.
+                                (fromList
+                                     [ (partDev, uuid)
+                                     | (Disk.PartitionInfo {partDev, uuid}) <- partitions
+                                     ] ^.
                                  at [i|#{dev}#{_partNum}|])
                         return [[i|# #{_diskModel}|], formatEntry [i|UUID=#{uuid}|] entry]

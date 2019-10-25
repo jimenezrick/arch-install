@@ -1,6 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module Install where
 
@@ -20,6 +21,19 @@ import Disk
 import FilePath ((<//>))
 import Filesystem
 import Fstab
+
+wipeRootDisk :: (MonadUnliftIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
+wipeRootDisk sysConf = do
+    rootDiskInfo <- getDiskInfo $ sysConf ^. storage . rootDisk
+    case rootDiskInfo of
+        DiskInfo {dev} -> wipe dev
+        DiskWithPartitionsInfo {dev, partitions} -> do
+            mapM_ (wipe . partDev) partitions
+            wipe dev
+  where
+    wipe dev = do
+        logInfo $ fromString [i|Wiping device: #{dev}|]
+        runCmd_ [i|wipefs -a #{dev}|]
 
 buildArch :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
 buildArch sysConf = do

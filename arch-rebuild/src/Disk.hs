@@ -38,33 +38,44 @@ getInstallDiskInfo device = do
     partUuidRootfs <- getDevPartUuid devRootfs
     return InstallDiskInfo {..}
 
+getDevModel :: MonadIO m => FilePath -> m (Maybe Text)
+getDevModel device = do
+    f <- getDevField "model" device
+    case f of
+        String model -> return $ Just model
+        _ -> return Nothing
+
 getDevUuidIfValid :: MonadUnliftIO m => FilePath -> m (Maybe UUID)
 getDevUuidIfValid device = catch (getDevUuid device) (\(_ :: StringException) -> return Nothing)
 
 getDevUuid :: MonadIO m => FilePath -> m (Maybe UUID)
-getDevUuid = getDevUuid' "uuid"
-
-getDevPartUuid :: MonadIO m => FilePath -> m UUID
-getDevPartUuid partDev = do
-    r <- getDevUuid' "partuuid" partDev
-    case r of
-        Just partUuid -> return partUuid
-        Nothing -> throwString "Invalid partition device"
-
-getDevUuid' :: MonadIO m => Text -> FilePath -> m (Maybe UUID)
-getDevUuid' field device = do
-    (j :: Value) <-
-        throwLeft $ eitherDecode' <$>
-        readProcessStdout_ (fromString [i|lsblk --json --nodeps -o #{field} #{device}|])
-    case j ^?! key "blockdevices" . _Array . _head . key field of
+getDevUuid device = do
+    f <- getDevField "uuid" device
+    case f of
         String s -> maybe (throwString "Cannot parse invalid UUID") (return . Just) (fromText s)
         _ -> return Nothing
 
+getDevPartUuid :: MonadIO m => FilePath -> m UUID
+getDevPartUuid partDev = do
+    f <- getDevField "partuuid" partDev
+    case f of
+        String s -> maybe (throwString "Cannot parse invalid UUID") return (fromText s)
+        _ -> throwString "Invalid partition device"
+
+getDevField :: MonadIO m => Text -> FilePath -> m Value
+getDevField field device = do
+    (j :: Value) <-
+        throwLeft $ eitherDecode' <$>
+        readProcessStdout_ (fromString [i|lsblk --json --nodeps -o #{field} #{device}|])
+    return $ j ^?! key "blockdevices" . _Array . _head . key field
+
 data DiskInfo
     = DiskInfo { dev :: FilePath
+               , model :: Maybe Text
                , uuid :: Maybe UUID
                , mounted :: Bool }
     | DiskWithPartitionsInfo { dev :: FilePath
+                             , model :: Maybe Text
                              , partitions :: [PartitionInfo] }
     deriving (Show, Generic)
 
@@ -78,6 +89,7 @@ data PartitionInfo = PartitionInfo
 getDiskInfo :: MonadUnliftIO m => BlockDev -> m DiskInfo
 getDiskInfo blockdev = do
     dev <- findDiskDevice blockdev
+    model <- getDevModel dev
     (j :: Value) <-
         throwLeft $ eitherDecode' <$> readProcessStdout_ (fromString [i|lsblk --json -O #{dev}|])
     let disk = j ^?! key "blockdevices" . _Array . _head

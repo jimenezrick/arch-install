@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Checks where
 
@@ -19,19 +20,28 @@ import Match
 exitIfNot :: MonadIO m => m a -> Bool -> m ()
 exitIfNot f b = unless b (f >> void (liftIO exitFailure))
 
-doPreCopyChecks :: (MonadUnliftIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
-doPreCopyChecks sysConf = do
-    logInfo "Doing pre-copy checks"
-    not <$> isDiskMounted (sysConf ^. storage . rootDisk) >>=
-        exitIfNot (logError "target root disk is currently mounted")
-
-doPreInstallChecks :: (MonadUnliftIO m, MonadReader env m, HasLogFunc env) => m ()
-doPreInstallChecks = do
+doPreInstallChecks :: (MonadUnliftIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
+doPreInstallChecks sysConf = do
     logInfo "Doing pre-install checks"
-    amIRoot >>= exitIfNot (logError "must be run as root")
-    isUefiSystem >>= exitIfNot (logError "not booted in UEFI mode")
-    isNetworkReady >>= exitIfNot (logError "network not ready")
-    isClockSynced >>= exitIfNot (logError "clock not in sync")
+    isRootDiskInQemu sysConf >>= exitIfNot (logError "Target root disk is not a QEMU device")
+    isRootDiskNotMounted sysConf >>= exitIfNot (logError "Target root disk is currently mounted")
+    amIRoot >>= exitIfNot (logError "Must be run as root")
+    isUefiSystem >>= exitIfNot (logError "Not booted in UEFI mode")
+    isNetworkReady >>= exitIfNot (logError "Network not ready")
+    isClockSynced >>= exitIfNot (logError "Clock not in sync")
+
+isRootDiskInQemu :: (MonadUnliftIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m Bool
+isRootDiskInQemu sysConf = do
+    rootDiskInfo <- getDiskInfo $ sysConf ^. storage . rootDisk
+    return $
+        case rootDiskInfo of
+            (DiskInfo {model = Just "QEMU_HARDDISK"}) -> True
+            (DiskWithPartitionsInfo {model = Just "QEMU_HARDDISK"}) -> True
+            _ -> False
+
+isRootDiskNotMounted ::
+       (MonadUnliftIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m Bool
+isRootDiskNotMounted sysConf = not <$> isDiskMounted (sysConf ^. storage . rootDisk)
 
 amIRoot :: MonadIO m => m Bool
 amIRoot = (== 0) <$> liftIO getEffectiveUserID
