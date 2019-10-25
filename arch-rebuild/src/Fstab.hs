@@ -18,7 +18,7 @@ import Error
 
 import qualified Disk
 
-renderFstab :: MonadIO m => [FstabEntry] -> m Text
+renderFstab :: MonadUnliftIO m => [FstabEntry] -> m Text
 renderFstab entries = unlines . map pack . concat <$> mapM renderDev entries
   where
     formatEntry fsSpec entry =
@@ -31,18 +31,18 @@ renderFstab entries = unlines . map pack . concat <$> mapM renderDev entries
                 disk <- Disk.getDiskInfo blockdev
                 case disk of
                     Disk.DiskWithPartitionsInfo {} ->
-                        throwString "expecting a disk without partitions"
+                        throwString "Expecting a disk without partitions"
                     Disk.DiskInfo {Disk.uuid} ->
                         return [[i|# #{_model}|], formatEntry [i|UUID=#{uuid}|] entry]
             blockdev@(DiskModelPartition {..}) -> do
                 disk <- Disk.getDiskInfo blockdev
                 case disk of
-                    Disk.DiskInfo {} -> throwString "expecting a disk with partitions"
+                    Disk.DiskInfo {} -> throwString "Expecting a disk with partitions"
                     Disk.DiskWithPartitionsInfo {Disk.partitions} -> do
                         dev <- Disk.findDiskModelDevice _diskModel
                         uuid <-
                             throwNothing "missing expected partition" $
                             return
-                                (fromList [(d, u) | (Disk.PartitionInfo d u _) <- partitions] ^.
+                                (fromList [(d, u) | (Disk.PartitionInfo d u _ _) <- partitions] ^.
                                  at [i|#{dev}#{_partNum}|])
                         return [[i|# #{_diskModel}|], formatEntry [i|UUID=#{uuid}|] entry]

@@ -21,6 +21,10 @@ import FilePath ((<//>))
 import Filesystem
 import Fstab
 
+buildArch :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
+buildArch sysConf = do
+    partitionDisk $ sysConf ^. storage . rootDisk -- TODO: LUKS
+
 buildRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
 buildRootfs sysConf = do
     logInfo "Starting Arch Linux image build"
@@ -91,26 +95,27 @@ mountDiskSubvols rootfsPath rootfsMnt subvols = do
 -- TODO: Review
 --
 partitionDisk :: (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> m ()
+partitionDisk other
+    | (FsUUID _) <- other = invalid
+    | (PartUUID _) <- other = invalid
+    | (DiskModelPartition _ _) <- other = invalid
+  where
+    invalid = throwString "Block device needs to be a disk"
 partitionDisk blockdev = do
-    dev <- findDevice
-    let espDev = [i|#{dev}/1|]
-        rootfsDev = [i|#{dev}/2|]
+    dev <- findDiskDevice blockdev
+    let espDev = [i|#{dev}1|]
+        rootfsDev = [i|#{dev}2|]
     logInfo $ fromString [i|Partitioning device: #{dev}|]
     runCmd_ $ [i|parted -s #{dev} -a optimal|] ++
         " mklabel gpt \
         \ mkpart primary 0% 513MiB \
         \ mkpart primary 513MiB 100% \
         \ set 1 boot on"
-    logInfo $ fromString [i|Formatting ESP: #{espDev}|]
+    -- TODO: do this in a different function, received as argument the device
+    logInfo $ fromString [i|Formatting ESP partition as FAT32: #{espDev}|]
     runCmd_ [i|mkfs.fat -F32 #{espDev}|]
-    logInfo $ fromString [i|Formatting rootfs partition: #{rootfsDev}|]
+    logInfo $ fromString [i|Formatting rootfs partition as BTRFS: #{rootfsDev}|]
     runCmd_ [i|mkfs.btrfs #{rootfsDev}|]
     --
     -- TODO: btrfs subvols, in a different function
     --
-  where
-    findDevice =
-        case blockdev of
-            (DevPath path) -> return path
-            (DiskModel model) -> findDiskModelDevice model
-            (DiskModelPartition _ _) -> throwString [i|block device cannot be a partition|]

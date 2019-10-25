@@ -19,7 +19,7 @@ import Match
 exitIfNot :: MonadIO m => m a -> Bool -> m ()
 exitIfNot f b = unless b (f >> void (liftIO exitFailure))
 
-doPreCopyChecks :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
+doPreCopyChecks :: (MonadUnliftIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
 doPreCopyChecks sysConf = do
     logInfo "Doing pre-copy checks"
     not <$> isDiskMounted (sysConf ^. storage . rootDisk) >>=
