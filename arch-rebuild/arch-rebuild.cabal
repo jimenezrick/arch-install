@@ -44,5 +44,6 @@ executable arch-rebuild
                      , aeson
                      , string-conversions
                      , uuid
+                     , network-uri
                      , binary
                      , pretty-show

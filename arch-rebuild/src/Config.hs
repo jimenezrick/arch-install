@@ -10,6 +10,7 @@ import RIO
 import Control.Lens
 import Data.Binary
 import Dhall
+import Network.URI (isURI)
 
 import qualified RIO.Text as T
 
@@ -114,7 +115,9 @@ auto' :: Interpret a => Type a
 auto' = autoWith (defaultInterpretOptions {fieldModifier = T.dropWhile (== '_')})
 
 loadSystemConfig :: MonadIO m => FilePath -> m SystemConfig
-loadSystemConfig path' = liftIO $ input auto' $ T.pack path'
+loadSystemConfig path'
+    | isURI path' = liftIO $ input auto' $ T.pack path'
+    | otherwise = liftIO $ inputFile auto' path'
 
 saveBinSystemConfig :: MonadIO m => FilePath -> SystemConfig -> m ()
 saveBinSystemConfig path' sysConf = writeFileBinary path' . toStrictBytes $ encode sysConf
