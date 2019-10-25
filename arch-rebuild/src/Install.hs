@@ -105,9 +105,6 @@ mountDiskSubvols rootfsPath rootfsMnt subvols = do
         when (subvolPath /= "/") $ createDirectoryIfMissing True $ rootfsMnt <//> subvolPath
         mountSubvol subvol rootfsPath (rootfsMnt <//> subvolPath)
 
---
--- TODO: Review
---
 partitionDisk :: (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> m ()
 partitionDisk other
     | (FsUUID _) <- other = invalid

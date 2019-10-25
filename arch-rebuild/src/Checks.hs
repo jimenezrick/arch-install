@@ -2,7 +2,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Checks where
 
@@ -35,8 +34,8 @@ isRootDiskInQemu sysConf = do
     rootDiskInfo <- getDiskInfo $ sysConf ^. storage . rootDisk
     return $
         case rootDiskInfo of
-            (DiskInfo {model = Just "QEMU_HARDDISK"}) -> True
-            (DiskWithPartitionsInfo {model = Just "QEMU_HARDDISK"}) -> True
+            DiskInfo {Disk.model = Just "QEMU_HARDDISK"} -> True
+            DiskWithPartitionsInfo {Disk.model = Just "QEMU_HARDDISK"} -> True
             _ -> False
 
 isRootDiskNotMounted ::

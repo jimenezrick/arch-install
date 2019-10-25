@@ -1,7 +1,7 @@
 let BlockDev = ./blockdev.dhall
 
 in  { rootDisk =
-        BlockDev.DevPath { path = "/dev/sda" }
+        BlockDev.DiskModel { model = "QEMU_HARDDISK" }
     , boot =
         ./boot.dhall
     , fstabEntries =
