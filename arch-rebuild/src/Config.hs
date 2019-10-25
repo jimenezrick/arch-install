@@ -19,7 +19,7 @@ data BlockDev
     | PartUUID { _partUuid :: Text }
     | DevPath { _path :: FilePath }
     | DiskModel { _model :: Text }
-    | DiskPartitionModel { _diskModel :: Text
+    | DiskModelPartition { _diskModel :: Text
                          , _partNum :: Natural }
     deriving (Show, Generic)
 
@@ -67,9 +67,9 @@ instance Binary BootConfig
 makeLenses ''BootConfig
 
 data StorageConfig = StorageConfig
-    { _boot :: BootConfig
+    { _rootDisk :: BlockDev
+    , _boot :: BootConfig
     , _fstabEntries :: [FstabEntry]
-    , _rootDiskModel :: Text
     , _espImage :: FilePath
     , _rootfsImage :: FilePath
     , _espImageSize :: Text

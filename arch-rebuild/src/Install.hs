@@ -2,10 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-module Install
-    ( buildRootfs
-    , copyDiskRootfsImage
-    ) where
+module Install where
 
 import RIO
 import RIO.Directory
@@ -115,13 +112,5 @@ partitionDisk blockdev = do
     findDevice =
         case blockdev of
             (DevPath path) -> return path
-            (DiskModel model) -> findDiskDevice model
-            (DiskPartitionModel _ _) -> throwString [i|block device cannot be a partition|]
-
-copyDiskRootfsImage :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
-copyDiskRootfsImage sysConf = do
-    let model = sysConf ^. storage . rootDiskModel
-    logInfo $ fromString [i|Copying system image to disk: #{model}|]
-    --
-    -- TODO
-    --
+            (DiskModel model) -> findDiskModelDevice model
+            (DiskModelPartition _ _) -> throwString [i|block device cannot be a partition|]

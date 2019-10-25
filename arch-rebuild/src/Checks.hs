@@ -22,8 +22,7 @@ exitIfNot f b = unless b (f >> void (liftIO exitFailure))
 doPreCopyChecks :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
 doPreCopyChecks sysConf = do
     logInfo "Doing pre-copy checks"
-    rootDiskDev <- findDiskDevice $ sysConf ^. storage . rootDiskModel
-    not <$> isDiskMounted rootDiskDev >>=
+    not <$> isDiskMounted (sysConf ^. storage . rootDisk) >>=
         exitIfNot (logError "target root disk is currently mounted")
 
 doPreInstallChecks :: (MonadUnliftIO m, MonadReader env m, HasLogFunc env) => m ()

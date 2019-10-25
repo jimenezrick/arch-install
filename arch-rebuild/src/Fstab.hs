@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Fstab where
 
@@ -26,19 +27,19 @@ renderFstab entries = unlines . map pack . concat <$> mapM renderDev entries
         case entry ^. fsEntry of
             FsUUID {_uuid} -> return [formatEntry [i|UUID=#{_uuid}|] entry]
             DevPath {_path} -> return [formatEntry [i|#{_path}|] entry]
-            DiskModel {_model} -> do
-                disk <- Disk.findDiskDevice _model >>= Disk.getDiskInfo
+            blockdev@(DiskModel _model) -> do
+                disk <- Disk.getDiskInfo blockdev
                 case disk of
                     Disk.DiskWithPartitionsInfo {} ->
                         throwString "expecting a disk without partitions"
                     Disk.DiskInfo {Disk.uuid} ->
                         return [[i|# #{_model}|], formatEntry [i|UUID=#{uuid}|] entry]
-            DiskPartitionModel {_diskModel, _partNum} -> do
-                disk <- Disk.findDiskDevice _diskModel >>= Disk.getDiskInfo
+            blockdev@(DiskModelPartition {..}) -> do
+                disk <- Disk.getDiskInfo blockdev
                 case disk of
                     Disk.DiskInfo {} -> throwString "expecting a disk with partitions"
                     Disk.DiskWithPartitionsInfo {Disk.partitions} -> do
-                        dev <- Disk.findDiskDevice _diskModel
+                        dev <- Disk.findDiskModelDevice _diskModel
                         uuid <-
                             throwNothing "missing expected partition" $
                             return

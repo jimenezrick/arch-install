@@ -27,7 +27,6 @@ data CmdOpts
     = LoadSystemConfig { confPath :: FilePath }
     | BuildRootfs { confPath :: FilePath }
     | ConfigureRootfs { binConfPath :: FilePath }
-    | CopyDiskImages { confPath :: FilePath }
     | SaveBuildInfo { confPath :: FilePath
                     , destDir :: FilePath }
     | ShowBuildInfo { binConfPath :: FilePath }
@@ -58,18 +57,14 @@ main = do
                     sysConf <- loadSystemConfig $ confPath
                     liftIO $ pPrint sysConf
                 BuildRootfs confPath -> do
-                    doPreInstallChecks
                     sysConf <- loadSystemConfig $ confPath
+                    doPreInstallChecks
+                    doPreCopyChecks sysConf
                     buildRootfs sysConf
                 ConfigureRootfs binConfPath -> do
                     sysConf <- loadBinSystemConfig binConfPath
                     configureRootfs sysConf
                     customizeRootfs
-                CopyDiskImages confPath -> do
-                    doPreInstallChecks
-                    sysConf <- loadSystemConfig $ confPath
-                    doPreCopyChecks sysConf
-                    copyDiskRootfsImage sysConf
                     -- XXX installBootloader sysConf
                 SaveBuildInfo confPath destDir -> do
                     sysConf <- loadSystemConfig $ confPath

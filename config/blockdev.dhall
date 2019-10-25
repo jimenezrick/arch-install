@@ -6,6 +6,6 @@
     { path : Text }
 | DiskModel :
     { model : Text }
-| DiskPartitionModel :
+| DiskModelPartition :
     { diskModel : Text, partNum : Natural }
 >

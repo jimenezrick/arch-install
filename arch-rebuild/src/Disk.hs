@@ -19,6 +19,7 @@ import Data.String.Interpolate
 import Data.Text.Lens (_Text)
 import Data.UUID (UUID, fromText)
 
+import Config
 import Error
 
 data InstallDiskInfo = InstallDiskInfo
@@ -65,8 +66,16 @@ data PartitionInfo = PartitionInfo
     , partMounted :: Bool
     } deriving (Show, Generic)
 
-getDiskInfo :: MonadIO m => FilePath -> m DiskInfo
-getDiskInfo dev = do
+getDiskInfo :: MonadIO m => BlockDev -> m DiskInfo
+getDiskInfo blockdev = do
+    dev <-
+        case blockdev of
+            DevPath path -> return path
+            DiskModel model -> findDiskModelDevice model
+            DiskModelPartition model partNum -> do
+                dev <- findDiskModelDevice model
+                return [i|{dev}{partNum}|]
+            -- TODO: FsUUID, PartUUID
     (j :: Value) <-
         throwLeft $ eitherDecode' <$> readProcessStdout_ (fromString [i|lsblk --json -O #{dev}|])
     let disk = j ^?! key "blockdevices" . _Array . _head
@@ -88,8 +97,8 @@ getDiskInfo dev = do
                 return PartitionInfo {..}
             _ -> throwString "Partition does not have an UUID"
 
-findDiskDevice :: MonadIO m => Text -> m FilePath
-findDiskDevice model = do
+findDiskModelDevice :: MonadIO m => Text -> m FilePath
+findDiskModelDevice model = do
     (j :: Value) <-
         throwLeft $ eitherDecode' <$> readProcessStdout_ "lsblk --json --nodeps -o path,model"
     case j ^?! key "blockdevices" . _Array ^.. folded .
@@ -105,9 +114,9 @@ isDevMounted device = do
     return . not . null $ j ^?! key "filesystems" . _Array ^.. folded .
         filtered (\fs -> fs ^? key "source" . _String . _Text == Just device)
 
-isDiskMounted :: MonadIO m => FilePath -> m Bool
-isDiskMounted device = do
-    info <- getDiskInfo device
+isDiskMounted :: MonadIO m => BlockDev -> m Bool
+isDiskMounted blockdev = do
+    info <- getDiskInfo blockdev
     return $
         case info of
             DiskInfo {mounted} -> mounted
