@@ -11,8 +11,9 @@ run_qemu() {
 	qemu-system-x86_64 \
 		-machine accel=kvm -cpu host -smp 2 -m 1G \
 		-drive if=pflash,format=raw,readonly,file=/usr/share/ovmf/x64/OVMF_CODE.fd \
+		-virtfs local,path=$DIR/..,security_model=passthrough,mount_tag=arch-rebuild \
 		"$@"
-		# -nographic "$@"
+		# -nographic (boot kernel with console=ttyS0)
 }
 
 case $1 in
