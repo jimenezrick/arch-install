@@ -35,9 +35,14 @@ wipeRootDisk sysConf = do
         logInfo $ fromString [i|Wiping device: #{dev}|]
         runCmd_ [i|wipefs -a #{dev}|]
 
-buildArch :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
+buildArch :: (MonadUnliftIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
 buildArch sysConf = do
-    partitionDisk $ sysConf ^. storage . rootDisk -- TODO: LUKS
+    logInfo "Starting Arch Linux build"
+    (espDev, rootfsDev) <- partitionDisk $ sysConf ^. storage . rootDisk
+    luksRootfsDev <-
+        withEncryptedRootfs rootfsDev $ \luksRootfsDev ->
+            makeFilesystemsPartitions espDev luksRootfsDev
+    return ()
 
 buildRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
 buildRootfs sysConf = do
@@ -105,7 +110,8 @@ mountDiskSubvols rootfsPath rootfsMnt subvols = do
         when (subvolPath /= "/") $ createDirectoryIfMissing True $ rootfsMnt <//> subvolPath
         mountSubvol subvol rootfsPath (rootfsMnt <//> subvolPath)
 
-partitionDisk :: (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> m ()
+partitionDisk ::
+       (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> m (FilePath, FilePath)
 partitionDisk other
     | (FsUUID _) <- other = invalid
     | (PartUUID _) <- other = invalid
@@ -122,7 +128,11 @@ partitionDisk blockdev = do
         \ mkpart primary 0% 513MiB \
         \ mkpart primary 513MiB 100% \
         \ set 1 boot on"
-    -- TODO: do this in a different function, received as argument the device
+    return (espDev, rootfsDev)
+
+makeFilesystemsPartitions ::
+       (MonadIO m, MonadReader env m, HasLogFunc env) => FilePath -> FilePath -> m ()
+makeFilesystemsPartitions espDev rootfsDev = do
     logInfo $ fromString [i|Formatting ESP partition as FAT32: #{espDev}|]
     runCmd_ [i|mkfs.fat -F32 #{espDev}|]
     logInfo $ fromString [i|Formatting rootfs partition as BTRFS: #{rootfsDev}|]
@@ -130,3 +140,20 @@ partitionDisk blockdev = do
     --
     -- TODO: btrfs subvols, in a different function
     --
+
+withEncryptedRootfs ::
+       (MonadUnliftIO m, MonadReader env m, HasLogFunc env)
+    => FilePath
+    -> (FilePath -> m ())
+    -> m FilePath
+withEncryptedRootfs rootfsDev f = do
+    let luksDevName = "cryptroot"
+    bracket
+        (do logInfo $ fromString [i|Encrypting rootfs partition with LUKS: #{rootfsDev}|]
+            runCmds_
+                [ [i|cryptsetup -y -v luksFormat --type luks2 #{rootfsDev}|]
+                , [i|cryptsetup --persistent --allow-discards open #{rootfsDev} #{luksDevName}|]
+                ]
+            return [i|/dev/mapper/#{luksDevName}|])
+        (\_ -> runCmd_ [i|cryptsetup close #{luksDevName}|])
+        (\luksDev -> f luksDev >> return luksDev)
