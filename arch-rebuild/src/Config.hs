@@ -79,6 +79,7 @@ instance Binary StorageConfig
 
 makeLenses ''StorageConfig
 
+-- XXX: Snapshot version (optional)
 data PacmanConfig = PacmanConfig
     { _mirrorlist :: Text
     , _packages :: [Text]
@@ -92,6 +93,7 @@ instance Binary PacmanConfig
 
 makeLenses ''PacmanConfig
 
+-- XXX: Wrap this with BuildInfo: uuid, builder, timestamp, package versions
 data SystemConfig = SystemConfig
     { _hostname :: Text
     , _zoneInfo :: Text

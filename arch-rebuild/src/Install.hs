@@ -45,6 +45,10 @@ buildArch sysConf = do
             buildRootfs sysConf espDev luksRootfsDev
     return ()
 
+-- TODO
+-- use arch archive
+-- pacstrap -M -G
+-- # genfstab -U /mnt >> /mnt/etc/fstab
 buildRootfs ::
        (MonadIO m, MonadReader env m, HasLogFunc env)
     => SystemConfig
