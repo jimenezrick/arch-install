@@ -68,13 +68,9 @@ makeLenses ''BootConfig
 
 data StorageConfig = StorageConfig
     { _rootDisk :: BlockDev
+    , _rootSubvolumes :: [(String, FilePath)]
     , _boot :: BootConfig
     , _fstabEntries :: [FstabEntry]
-    , _espImage :: FilePath
-    , _rootfsImage :: FilePath
-    , _espImageSize :: Text
-    , _rootfsImageSize :: Text
-    , _rootSubvolumes :: [(String, FilePath)]
     } deriving (Show, Generic)
 
 instance Interpret StorageConfig

@@ -69,7 +69,6 @@ main = do
                     sysConf <- loadBinSystemConfig binConfPath
                     configureRootfs sysConf
                     customizeRootfs
-                    -- XXX installBootloader sysConf
                 SaveBuildInfo confPath destDir -> do
                     sysConf <- loadSystemConfig $ confPath
                     saveBinSystemConfig (destDir </> "system-build.info") sysConf

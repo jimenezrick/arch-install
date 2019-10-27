@@ -15,9 +15,6 @@ import Command
 import Config
 import FilePath ((<//>))
 
-installBootloader :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
-installBootloader SystemConfig {..} = runCmd_ [i|bootctl install|]
-
 runBinInChroot ::
        (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> FilePath -> String -> m ()
 runBinInChroot sysConf rootfsMnt binCmd = do
@@ -44,6 +41,7 @@ configureRootfs SystemConfig {..} =
         , [i|sed -i "s/^HOOKS=.*/HOOKS=(#{unwords hooks})/" /etc/mkinitcpio.conf|]
         , [i|mkinitcpio -p linux|]
         , [i|mkinitcpio -p linux-lts|]
+        , [i|bootctl install|]
         ]
   where
     hooks =

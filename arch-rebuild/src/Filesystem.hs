@@ -18,6 +18,9 @@ mountLoopImage imgPath mntPoint = runCmd_ [i|mount -o loop #{imgPath} #{mntPoint
 mountSubvol :: MonadIO m => FilePath -> FilePath -> String -> m ()
 mountSubvol subvol devPath mntPoint = runCmd_ [i|mount -o subvol=#{subvol} #{devPath} #{mntPoint}|]
 
+mountPoint :: MonadIO m => FilePath -> FilePath -> m ()
+mountPoint devPath mntPoint = runCmd_ [i|mount #{devPath} #{mntPoint}|]
+
 umountPoint :: MonadIO m => FilePath -> m ()
 umountPoint mntPoint = runCmd_ [i|umount #{mntPoint}|]
 
