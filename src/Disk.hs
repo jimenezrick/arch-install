@@ -18,25 +18,28 @@ import Data.Aeson (Value(..), eitherDecode')
 import Data.Aeson.Lens
 import Data.String.Interpolate
 import Data.Text.Lens (_Text)
-import Data.UUID (UUID, fromText)
+import Data.UUID (UUID, fromText, toText)
 
 import Config
 import Error
 
-data InstallDiskInfo = InstallDiskInfo
-    { devEsp :: FilePath
-    , devRootfs :: FilePath
-    , partUuidEsp :: UUID
-    , partUuidRootfs :: UUID
+data RootDiskInstallInfo = RootDiskInstallInfo
+    { espDev :: FilePath
+    , rootfsDev :: FilePath
+    , espPartUuid :: UUID
+    , rootfsLuksUuid :: UUID
     } deriving (Show)
 
-getInstallDiskInfo :: MonadIO m => FilePath -> m InstallDiskInfo
-getInstallDiskInfo device = do
-    let devEsp = [i|#{device}1|]
-        devRootfs = [i|#{device}2|]
-    partUuidEsp <- getDevPartUuid devEsp
-    partUuidRootfs <- getDevPartUuid devRootfs
-    return InstallDiskInfo {..}
+resolveSystemConfig :: LoadedSystemConfig -> RootDiskInstallInfo -> SystemConfig
+resolveSystemConfig loadedSysConf installInfo =
+    loadedSysConf (toText $ espPartUuid installInfo) (toText $ rootfsLuksUuid installInfo)
+
+getRootDiskInstallInfo :: MonadIO m => FilePath -> FilePath -> m RootDiskInstallInfo
+getRootDiskInstallInfo espDev rootfsDev = do
+    espPartUuid <- getDevPartUuid espDev
+    rootfsLuksUuid <-
+        maybe (throwString "Missing UUID on rootfs partition") return =<< getDevUuid rootfsDev
+    return RootDiskInstallInfo {..}
 
 getDevModel :: MonadIO m => FilePath -> m (Maybe Text)
 getDevModel device = do

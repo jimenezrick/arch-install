@@ -35,20 +35,18 @@ wipeRootDisk sysConf = do
         logInfo $ fromString [i|Wiping device: #{dev}|]
         runCmd_ [i|wipefs -a #{dev}|]
 
-buildArch :: (MonadUnliftIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
-buildArch sysConf = do
+buildArch :: (MonadUnliftIO m, MonadReader env m, HasLogFunc env) => LoadedSystemConfig -> m ()
+buildArch loadedSysConf = do
     logInfo "Starting Arch Linux build"
-    (espDev, rootfsDev) <- partitionDisk $ sysConf ^. storage . rootDisk
+    (espDev, rootfsDev) <- partitionDisk $ temporarySystemConfig loadedSysConf ^. storage . rootDisk
     luksRootfsDev <-
         withEncryptedRootfs rootfsDev $ \luksRootfsDev -> do
             makeFilesystemsPartitions espDev luksRootfsDev
+            installInfo <- getRootDiskInstallInfo espDev rootfsDev
+            let sysConf = resolveSystemConfig loadedSysConf installInfo
             buildRootfs sysConf espDev luksRootfsDev
     return ()
 
--- TODO
--- use arch archive
--- pacstrap -M -G
--- # genfstab -U /mnt >> /mnt/etc/fstab
 buildRootfs ::
        (MonadIO m, MonadReader env m, HasLogFunc env)
     => SystemConfig
@@ -86,13 +84,18 @@ buildRootfs sysConf espDev rootfsDev = do
         logInfo $ fromString [i|Bootstrapping Arch on: #{rootfsMnt}|]
         let pkgList = T.unwords $ sysConf ^. pacman . packages
             grpList = T.unwords $ sysConf ^. pacman . groups
-        runCmd_ [i|pacstrap #{rootfsMnt} #{pkgList} #{grpList}|]
-        let mirrorlistPath = rootfsMnt <//> "/etc/pacman.d/mirrorlist"
-        logInfo $ fromString [i|Copying mirrorlist to: #{mirrorlistPath}|]
-        liftIO $ writeFile mirrorlistPath $ sysConf ^. pacman . mirrorlist
+        runCmd_ [i|pacstrap -G -M #{rootfsMnt} #{pkgList} #{grpList}|]
+        -- TODO: Use mirror to select a snapshot
+        -- let mirrorlistPath = rootfsMnt <//> "/etc/pacman.d/mirrorlist"
+        -- logInfo $ fromString [i|Copying mirrorlist to: #{mirrorlistPath}|]
+        -- liftIO $ writeFile mirrorlistPath $ sysConf ^. pacman . mirrorlist
+        -- TODO: render the fstab including the new UUIDs
+        -- let fstabPath = rootfsMnt <//> "/etc/fstab"
+        -- logInfo $ fromString [i|Rendering fstab to: #{fstabPath}|]
+        -- liftIO $ writeFile fstabPath =<< renderFstab (sysConf ^. storage . fstabEntries)
         let fstabPath = rootfsMnt <//> "/etc/fstab"
-        logInfo $ fromString [i|Rendering fstab to: #{fstabPath}|]
-        liftIO $ writeFile fstabPath =<< renderFstab (sysConf ^. storage . fstabEntries)
+        logInfo $ fromString [i|Generating fstab on: #{fstabPath}|]
+        runCmd_ [i|genfstab -U #{rootfsMnt} >> #{fstabPath}|]
 
 partitionDisk ::
        (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> m (FilePath, FilePath)

@@ -77,7 +77,7 @@ mkdir = createDirectoryIfMissing True
 
 chmod :: FilePath -> FileMode -> IO ()
 chmod path mode
-    | mode > 0o7777 = error "FsTree.chmod: invalid mode"
+    | mode > 0o7777 = throwString "FsTree.chmod: invalid mode"
     | otherwise = setFileMode path mode
 
 chown :: FilePath -> String -> String -> IO ()

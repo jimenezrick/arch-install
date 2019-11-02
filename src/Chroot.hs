@@ -22,7 +22,7 @@ runBinInChroot sysConf rootfsMnt binCmd = do
     let chrootBin' = makeRelative rootfsMnt chrootBin
         chrootConf' = makeRelative rootfsMnt chrootConf
     logInfo $ fromString [i|Running within chroot #{rootfsMnt}: #{binCmd}|]
-    runCmd_ [i|arch-chroot #{rootfsMnt} #{chrootBin'} #{binCmd} --bin-conf-path #{chrootConf'}|]
+    runCmd_ [i|arch-chroot #{rootfsMnt} #{chrootBin'} #{binCmd} --build-info-path #{chrootConf'}|]
 
 configureRootfsChroot ::
        (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> FilePath -> m ()
@@ -75,5 +75,6 @@ copyExecutableWithBuildInfo sysConf rootfsMnt = do
         logInfo $ fromString [i|Copying binary to chroot: #{rootfsMnt}|]
         createDirectory chrootDest
         copyFile execPath execDest
-        saveBinSystemConfig confDest sysConf
+        buildInfo <- getBuildInfo sysConf
+        saveBuildInfo confDest buildInfo
     return (execDest, confDest)

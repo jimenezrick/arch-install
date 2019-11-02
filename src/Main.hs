@@ -9,7 +9,6 @@
 module Main where
 
 import RIO
-import RIO.FilePath ((</>))
 import RIO.Process
 import RIO.Text (pack)
 
@@ -24,13 +23,10 @@ import FsTree
 import Install
 
 data CmdOpts
-    = LoadSystemConfig { confPath :: FilePath }
-    | WipeRootDisk { confPath :: FilePath }
+    = WipeRootDisk { confPath :: FilePath }
     | BuildArch { confPath :: FilePath }
-    | ConfigureRootfs { binConfPath :: FilePath }
-    | SaveBuildInfo { confPath :: FilePath
-                    , destDir :: FilePath }
-    | ShowBuildInfo { binConfPath :: FilePath }
+    | ConfigureRootfs { buildInfoPath :: FilePath }
+    | ShowBuildInfo { buildInfoPath :: FilePath }
     deriving (Generic)
 
 instance ParseRecord CmdOpts where
@@ -54,27 +50,21 @@ main = do
             case cmd
                 -- TODO: fetch /etc + /home BTRFS subvols
                   of
-                LoadSystemConfig confPath -> do
-                    sysConf <- loadSystemConfig $ confPath
-                    liftIO $ pPrint sysConf
                 WipeRootDisk confPath -> do
-                    sysConf <- loadSystemConfig $ confPath
+                    sysConf <- temporarySystemConfig <$> loadSystemConfig confPath
                     doPreInstallChecks sysConf
                     wipeRootDisk sysConf
                 BuildArch confPath -> do
-                    sysConf <- loadSystemConfig $ confPath
-                    doPreInstallChecks sysConf
+                    sysConf <- loadSystemConfig confPath
+                    doPreInstallChecks $ temporarySystemConfig sysConf
                     buildArch sysConf
-                ConfigureRootfs binConfPath -> do
-                    sysConf <- loadBinSystemConfig binConfPath
-                    configureRootfs sysConf
+                ConfigureRootfs buildInfoPath -> do
+                    buildInfo <- loadBuildInfo buildInfoPath
+                    configureRootfs $ buildInfo ^. systemConfig
                     customizeRootfs
-                SaveBuildInfo confPath destDir -> do
-                    sysConf <- loadSystemConfig $ confPath
-                    saveBinSystemConfig (destDir </> "system-build.info") sysConf
-                ShowBuildInfo binConfPath -> do
-                    sysConf <- loadBinSystemConfig $ binConfPath
-                    liftIO $ pPrint sysConf
+                ShowBuildInfo buildInfoPath -> do
+                    buildInfo <- loadBuildInfo buildInfoPath
+                    liftIO $ pPrint buildInfo
     runApp $ do
         catch run (\(ex :: SomeException) -> logError (displayShow ex) >> liftIO exitFailure)
         logInfo "Done"

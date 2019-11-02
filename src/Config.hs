@@ -2,13 +2,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Config where
 
 import RIO
+import RIO.Process
+import RIO.Time
 
 import Control.Lens
 import Data.Binary
+import Data.String.Conversions (cs)
 import Dhall
 import Network.URI (isURI)
 
@@ -79,7 +83,6 @@ instance Binary StorageConfig
 
 makeLenses ''StorageConfig
 
--- XXX: Snapshot version (optional)
 data PacmanConfig = PacmanConfig
     { _mirrorlist :: Text
     , _packages :: [Text]
@@ -93,7 +96,6 @@ instance Binary PacmanConfig
 
 makeLenses ''PacmanConfig
 
--- XXX: Wrap this with BuildInfo: uuid, builder, timestamp, package versions
 data SystemConfig = SystemConfig
     { _hostname :: Text
     , _zoneInfo :: Text
@@ -109,16 +111,37 @@ instance Binary SystemConfig
 
 makeLenses ''SystemConfig
 
+data BuildInfo = BuildInfo
+    { _builder :: Text
+    , _timestamp :: Text
+    , _systemConfig :: SystemConfig
+    } deriving (Show, Generic)
+
+instance Binary BuildInfo
+
+makeLenses ''BuildInfo
+
+type LoadedSystemConfig = Text -> Text -> SystemConfig
+
+temporarySystemConfig :: LoadedSystemConfig -> SystemConfig
+temporarySystemConfig loadedSysConf = loadedSysConf undefined undefined
+
 auto' :: Interpret a => Type a
 auto' = autoWith (defaultInterpretOptions {fieldModifier = T.dropWhile (== '_')})
 
-loadSystemConfig :: MonadIO m => FilePath -> m SystemConfig
+loadSystemConfig :: MonadIO m => FilePath -> m LoadedSystemConfig
 loadSystemConfig path'
     | isURI path' = liftIO $ input auto' $ T.pack path'
     | otherwise = liftIO $ inputFile auto' path'
 
-saveBinSystemConfig :: MonadIO m => FilePath -> SystemConfig -> m ()
-saveBinSystemConfig path' sysConf = writeFileBinary path' . toStrictBytes $ encode sysConf
+getBuildInfo :: MonadIO m => SystemConfig -> m BuildInfo
+getBuildInfo sysConf = do
+    _builder <- cs <$> readProcessStdout_ "hostnamectl status"
+    _timestamp <- cs . show <$> liftIO getCurrentTime
+    return BuildInfo {_systemConfig = sysConf, ..}
 
-loadBinSystemConfig :: MonadIO m => FilePath -> m SystemConfig
-loadBinSystemConfig path' = decode . fromStrictBytes <$> readFileBinary path'
+loadBuildInfo :: MonadIO m => FilePath -> m BuildInfo
+loadBuildInfo path' = decode . fromStrictBytes <$> readFileBinary path'
+
+saveBuildInfo :: MonadIO m => FilePath -> BuildInfo -> m ()
+saveBuildInfo path' buildInfo = writeFileBinary path' . toStrictBytes $ encode buildInfo
