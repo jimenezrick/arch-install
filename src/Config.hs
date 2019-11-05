@@ -48,20 +48,9 @@ instance Binary FstabEntry
 
 makeLenses ''FstabEntry
 
-data BootEntries = BootEntries
-    { _bootName :: Text
-    , _bootConf :: Text
-    } deriving (Show, Generic)
-
-instance Interpret BootEntries
-
-instance Binary BootEntries
-
-makeLenses ''BootEntries
-
 data BootConfig = BootConfig
     { _loaderConf :: Text
-    , _bootEntries :: [BootEntries]
+    , _bootEntries :: [(Text, Text)]
     } deriving (Show, Generic)
 
 instance Interpret BootConfig

@@ -7,6 +7,7 @@ module Install where
 
 import RIO
 import RIO.Directory
+import RIO.FilePath
 import RIO.List
 
 import qualified RIO.Text as T
@@ -20,6 +21,7 @@ import Config
 import Disk
 import FilePath ((<//>))
 import Filesystem
+import FsTree
 import Fstab
 
 wipeRootDisk :: (MonadUnliftIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
@@ -39,21 +41,22 @@ buildArch :: (MonadUnliftIO m, MonadReader env m, HasLogFunc env) => LoadedSyste
 buildArch loadedSysConf = do
     logInfo "Starting Arch Linux build"
     (espDev, rootfsDev) <- partitionDisk $ temporarySystemConfig loadedSysConf ^. storage . rootDisk
-    luksRootfsDev <-
-        withEncryptedRootfs rootfsDev $ \luksRootfsDev -> do
-            makeFilesystemsPartitions espDev luksRootfsDev
-            installInfo <- getRootDiskInstallInfo espDev rootfsDev
-            let sysConf = resolveSystemConfig loadedSysConf installInfo
-            buildRootfs sysConf espDev luksRootfsDev
-    return ()
+    withEncryptedRootfs rootfsDev $ \luksRootfsDev -> do
+        makeFilesystemsPartitions espDev luksRootfsDev
+        installInfo <- getRootDiskInstallInfo espDev rootfsDev
+        let sysConf = resolveSystemConfig loadedSysConf installInfo
+        buildRootfs sysConf espDev luksRootfsDev $ \espMnt rootfsMnt -> do
+            renderBootEntries sysConf espMnt
+            configureRootfsChroot sysConf rootfsMnt
 
 buildRootfs ::
        (MonadIO m, MonadReader env m, HasLogFunc env)
     => SystemConfig
     -> FilePath
     -> FilePath
+    -> (FilePath -> FilePath -> m ())
     -> m ()
-buildRootfs sysConf espDev rootfsDev = do
+buildRootfs sysConf espDev rootfsDev f = do
     createDirectoryIfMissing False rootfsMnt
     mountPoint rootfsDev rootfsMnt
     createDiskSubvols $ fst <$> sysConf ^. storage . rootSubvolumes
@@ -64,7 +67,7 @@ buildRootfs sysConf espDev rootfsDev = do
     mountPoint espDev espMnt
     --
     bootstrapArch
-    configureRootfsChroot sysConf rootfsMnt
+    f espMnt rootfsMnt
     --
     umountAllUnder rootfsMnt
   where
@@ -131,7 +134,7 @@ withEncryptedRootfs ::
        (MonadUnliftIO m, MonadReader env m, HasLogFunc env)
     => FilePath
     -> (FilePath -> m ())
-    -> m FilePath
+    -> m ()
 withEncryptedRootfs rootfsDev f = do
     let luksDevName = "cryptroot" :: String
     bracket
@@ -142,4 +145,18 @@ withEncryptedRootfs rootfsDev f = do
                 ]
             return [i|/dev/mapper/#{luksDevName}|])
         (\_ -> runCmd_ [i|cryptsetup close #{luksDevName}|])
-        (\luksDev -> f luksDev >> return luksDev)
+        f
+
+renderBootEntries ::
+       (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> FilePath -> m ()
+renderBootEntries sysConf espMnt = do
+    let entries = sysConf ^. storage . boot . bootEntries
+        loader = sysConf ^. storage . boot . loaderConf
+        entryFiles =
+            map (\(name, entry) -> File (T.unpack name <.> "conf") (Content entry) defAttrs) entries
+    logInfo $ fromString [i|Rendering EFI boot entries: #{map fst entries}|]
+    createFsTreeAt espMnt $
+        Dir
+            "efi/loader"
+            defAttrs
+            [File "loader.conf" (Content loader) defAttrs, Dir "entries" defAttrs entryFiles]
