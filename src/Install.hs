@@ -46,8 +46,8 @@ buildArch loadedSysConf = do
         installInfo <- getRootDiskInstallInfo espDev rootfsDev
         let sysConf = resolveSystemConfig loadedSysConf installInfo
         buildRootfs sysConf espDev luksRootfsDev $ \espMnt rootfsMnt -> do
-            renderBootEntries sysConf espMnt
             configureRootfsChroot sysConf rootfsMnt
+            renderBootEntries sysConf espMnt
 
 buildRootfs ::
        (MonadIO m, MonadReader env m, HasLogFunc env)
@@ -157,6 +157,6 @@ renderBootEntries sysConf espMnt = do
     logInfo $ fromString [i|Rendering EFI boot entries: #{map fst entries}|]
     createFsTreeAt espMnt $
         Dir
-            "efi/loader"
+            "loader"
             defAttrs
             [File "loader.conf" (Content loader) defAttrs, Dir "entries" defAttrs entryFiles]

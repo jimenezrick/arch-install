@@ -17,6 +17,6 @@ $ sudo tools/boot-qemu.sh iso
 + For development, to mount this repo on the QEMU VM:
 
 ``` shell
-mkdir -p /mnt/arch-rebuild
+mkdir /mnt/arch-rebuild
 mount -t 9p -o trans=virtio,version=9p2000.L,rw arch-rebuild /mnt/arch-rebuild
 ```
