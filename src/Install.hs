@@ -48,6 +48,7 @@ buildArch loadedSysConf = do
         buildRootfs sysConf espDev luksRootfsDev $ \espMnt rootfsMnt -> do
             configureRootfsChroot sysConf rootfsMnt
             renderBootEntries sysConf espMnt
+            -- TODO: take BTRFS snapshots?
 
 buildRootfs ::
        (MonadIO m, MonadReader env m, HasLogFunc env)
@@ -92,13 +93,11 @@ buildRootfs sysConf espDev rootfsDev f = do
         -- let mirrorlistPath = rootfsMnt <//> "/etc/pacman.d/mirrorlist"
         -- logInfo $ fromString [i|Copying mirrorlist to: #{mirrorlistPath}|]
         -- liftIO $ writeFile mirrorlistPath $ sysConf ^. pacman . mirrorlist
-        -- TODO: render the fstab including the new UUIDs
-        -- let fstabPath = rootfsMnt <//> "/etc/fstab"
-        -- logInfo $ fromString [i|Rendering fstab to: #{fstabPath}|]
-        -- liftIO $ writeFile fstabPath =<< renderFstab (sysConf ^. storage . fstabEntries)
         let fstabPath = rootfsMnt <//> "/etc/fstab"
+        logInfo $ fromString [i|Rendering fstab to: #{fstabPath}|]
+        liftIO $ writeFile fstabPath =<< renderFstab (sysConf ^. storage . fstabEntries)
         logInfo $ fromString [i|Generating fstab on: #{fstabPath}|]
-        runCmd_ [i|genfstab -U #{rootfsMnt} >> #{fstabPath}|]
+        runCmd_ [i|genfstab -U #{rootfsMnt} >> #{fstabPath}.xxx|] -- XXX
 
 partitionDisk ::
        (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> m (FilePath, FilePath)

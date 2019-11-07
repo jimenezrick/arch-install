@@ -26,6 +26,7 @@ renderFstab entries = unlines . map pack . concat <$> mapM renderDev entries
     renderDev entry =
         case entry ^. fsEntry of
             FsUUID {_uuid} -> return [formatEntry [i|UUID=#{_uuid}|] entry]
+            PartUUID {_partUuid} -> return [formatEntry [i|PARTUUID=#{_partUuid}|] entry]
             DevPath {_path} -> return [formatEntry [i|#{_path}|] entry]
             blockdev@(DiskModel _model) -> do
                 disk <- Disk.getDiskInfo blockdev
@@ -34,7 +35,7 @@ renderFstab entries = unlines . map pack . concat <$> mapM renderDev entries
                         throwString "Expecting a disk without partitions"
                     Disk.DiskInfo {Disk.uuid} ->
                         return [[i|# #{_model}|], formatEntry [i|UUID=#{uuid}|] entry]
-            blockdev@(DiskModelPartition {..}) -> do
+            blockdev@DiskModelPartition {..} -> do
                 disk <- Disk.getDiskInfo blockdev
                 case disk of
                     Disk.DiskInfo {} -> throwString "Expecting a disk with partitions"
@@ -45,7 +46,7 @@ renderFstab entries = unlines . map pack . concat <$> mapM renderDev entries
                             return
                                 (fromList
                                      [ (partDev, uuid)
-                                     | (Disk.PartitionInfo {partDev, uuid}) <- partitions
+                                     | Disk.PartitionInfo {partDev, uuid} <- partitions
                                      ] ^.
                                  at [i|#{dev}#{_partNum}|])
                         return [[i|# #{_diskModel}|], formatEntry [i|UUID=#{uuid}|] entry]
