@@ -13,7 +13,7 @@ import RIO.List
 import qualified RIO.Text as T
 
 import Data.String.Interpolate
-import Data.Text.IO (writeFile)
+import Data.Text.IO (appendFile)
 
 import Chroot
 import Command
@@ -48,7 +48,7 @@ buildArch loadedSysConf = do
         buildRootfs sysConf espDev luksRootfsDev $ \espMnt rootfsMnt -> do
             configureRootfsChroot sysConf rootfsMnt
             renderBootEntries sysConf espMnt
-            -- TODO: take BTRFS snapshots?
+            -- TODO: take BTRFS snapshots here?
 
 buildRootfs ::
        (MonadIO m, MonadReader env m, HasLogFunc env)
@@ -95,9 +95,7 @@ buildRootfs sysConf espDev rootfsDev f = do
         -- liftIO $ writeFile mirrorlistPath $ sysConf ^. pacman . mirrorlist
         let fstabPath = rootfsMnt <//> "/etc/fstab"
         logInfo $ fromString [i|Rendering fstab to: #{fstabPath}|]
-        liftIO $ writeFile fstabPath =<< renderFstab (sysConf ^. storage . fstabEntries)
-        logInfo $ fromString [i|Generating fstab on: #{fstabPath}|]
-        runCmd_ [i|genfstab -U #{rootfsMnt} >> #{fstabPath}.xxx|] -- XXX
+        liftIO $ appendFile fstabPath =<< renderFstab (sysConf ^. storage . fstabEntries)
 
 partitionDisk ::
        (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> m (FilePath, FilePath)
