@@ -55,7 +55,6 @@ configureRootfs SystemConfig {..} =
         , "sd-encrypt"
         , "filesystems"
         , "fsck"
-        , "sd-shutdown"
         ]
 
 copyExecutableWithBuildInfo ::
