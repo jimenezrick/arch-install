@@ -80,7 +80,7 @@ runApp m =
 
 customizeRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => m ()
 customizeRootfs = do
-    logInfo "Customizing rootfs to my linking"
+    logInfo "Customizing rootfs to my liking"
     createFsTree $
         Dir
             "/mnt"

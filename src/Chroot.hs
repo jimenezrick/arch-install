@@ -47,17 +47,16 @@ configureRootfs SystemConfig {..} =
     hooks =
         [ "base"
         , "systemd"
-        , "autodetect"
         , "keyboard"
+        , "block"
+        , "autodetect"
         , "sd-vconsole"
         , "modconf"
-        , "block"
         , "sd-encrypt"
         , "filesystems"
         , "fsck"
         , "sd-shutdown"
         ]
-        -- FIXME: shutdown error (https://github.com/systemd/systemd/issues/8155)
 
 copyExecutableWithBuildInfo ::
        (MonadIO m, MonadReader env m, HasLogFunc env)
