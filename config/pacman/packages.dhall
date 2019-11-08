@@ -1,1 +1,8 @@
-[ "base", "linux", "linux-lts", "linux-firmware", "btrfs-progs", "amd-ucode" ]
+[ "base"
+, "linux"
+, "linux-lts"
+, "linux-firmware"
+, "amd-ucode"
+, "btrfs-progs"
+, "vi"
+]
