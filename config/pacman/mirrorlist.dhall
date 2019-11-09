@@ -1,0 +1,1 @@
+Some [ "https://archive.archlinux.org/repos/2019/11/01/\$repo/os/\$arch" ]

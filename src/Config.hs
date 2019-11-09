@@ -73,7 +73,7 @@ instance Binary StorageConfig
 makeLenses ''StorageConfig
 
 data PacmanConfig = PacmanConfig
-    { _mirrorlist :: Text
+    { _mirrorlist :: Maybe [Text]
     , _packages :: [Text]
     , _groups :: [Text]
     , _aurPackages :: [Text]

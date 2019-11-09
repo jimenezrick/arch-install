@@ -1,5 +1,5 @@
 { mirrorlist =
-    ./pacman/mirrorlist as Text
+    ./pacman/mirrorlist.dhall
 , packages =
     ./pacman/packages.dhall
 , groups =
