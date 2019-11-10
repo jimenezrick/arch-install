@@ -1,1 +1,13 @@
-[] : List Text
+[ "base"
+, "base-devel"
+, "gnome"
+, "linux-tools"
+, "qt"
+, "qt5"
+, "texlive-most"
+, "vulkan-devel"
+, "xorg"
+, "xorg-apps"
+, "xorg-drivers"
+, "xorg-fonts"
+]

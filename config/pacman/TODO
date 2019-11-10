@@ -1,4 +1,0 @@
-Write tool to generate these Dhall files from current system:
-- aur: pacman -Qqem
-- explicit: pacman -Qqen
-- groups: pacman -Qg | awk '{print $1}' | sort -u
