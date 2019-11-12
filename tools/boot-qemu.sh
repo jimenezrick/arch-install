@@ -16,10 +16,9 @@ run_qemu() {
 		# -nographic (boot kernel with console=ttyS0)
 }
 
-cmd=$1
-shift
-case $cmd in
+case $1 in
 	iso)
+		shift
 		run_qemu \
 			-device virtio-scsi-pci,id=scsi0 \
 			-drive file=$DISK,if=none,format=raw,discard=unmap,aio=native,cache=none,id=hd0 \
@@ -29,6 +28,7 @@ case $cmd in
 			"$@"
 		;;
 	disk)
+		shift
 		run_qemu \
 			-device virtio-scsi-pci,id=scsi0 \
 			-drive file=$DISK,if=none,format=raw,discard=unmap,aio=native,cache=none,id=hd0 \
@@ -36,13 +36,7 @@ case $cmd in
 			-boot order=c \
 			"$@"
 		;;
-	disk-blk)
-		run_qemu \
-			-drive file=$DISK,format=raw,cache=none,if=virtio \
-			-boot order=c \
-			"$@"
-		;;
 	*)
-		echo "Usage: $0 iso|disk|disk-blk [<extra_args>]"
+		echo "Usage: $0 iso|disk [<extra_args>]"
 		;;
 esac
