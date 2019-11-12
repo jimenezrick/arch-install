@@ -5,10 +5,11 @@
 
 module Install where
 
-import RIO
+import RIO hiding (lookup)
 import RIO.Directory
 import RIO.FilePath
-import RIO.List
+import RIO.List (sortOn)
+import RIO.Map (fromList, lookup, member)
 
 import qualified RIO.Text as T
 
@@ -48,7 +49,7 @@ buildArch loadedSysConf = do
         buildRootfs sysConf espDev luksRootfsDev $ \espMnt rootfsMnt -> do
             configureRootfsChroot sysConf rootfsMnt
             renderBootEntries sysConf espMnt
-            -- TODO: take BTRFS snapshots after installation here and mount it somewhere?
+            -- TODO: build AUR with auracle
 
 buildRootfs ::
        (MonadIO m, MonadReader env m, HasLogFunc env)
@@ -71,6 +72,7 @@ buildRootfs sysConf espDev rootfsDev f = do
     maybe (return ()) renderMirrorlist $ sysConf ^. pacman . mirrorlist
     bootstrapArch
     f espMnt rootfsMnt
+    takeSubvolSnapshot (fromList $ sysConf ^. storage . rootSubvolumes) "@" "initial-build"
     umountAllUnder rootfsMnt
   where
     rootfsMnt = "/mnt/arch-rootfs"
@@ -97,6 +99,13 @@ buildRootfs sysConf espDev rootfsDev f = do
         logInfo $ fromString [i|Overwriting mirrorlist with: #{servers}|]
         liftIO $ writeFile "/etc/pacman.d/mirrorlist" . T.unlines $
             map (\s -> fromString [i|Server = #{s}|]) servers
+    takeSubvolSnapshot subvols targetSubvol targetName =
+        when (member "@snapshots" subvols) $ do
+            logInfo $ fromString [i|Taking snapshot of BTRFS subvolume: #{targetSubvol}|]
+            let Just snapshotsMnt = (rootfsMnt <//>) <$> lookup "@snapshots" subvols
+                Just targetMnt = (rootfsMnt <//>) <$> lookup targetSubvol subvols
+            runCmd_
+                [i|btrfs subvolume snapshot -r #{targetMnt} #{snapshotsMnt <//> targetSubvol}-#{targetName}|]
 
 partitionDisk ::
        (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> m (FilePath, FilePath)

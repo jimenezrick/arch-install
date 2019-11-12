@@ -49,6 +49,7 @@ main = do
     let run =
             case cmd
                 -- TODO: fetch /etc + /home BTRFS subvols
+                -- /etc inside /home and copy on rootfs (hard link?)
                   of
                 WipeRootDisk confPath -> do
                     sysConf <- temporarySystemConfig <$> loadSystemConfig confPath
