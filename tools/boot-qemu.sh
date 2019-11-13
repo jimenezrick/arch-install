@@ -13,7 +13,7 @@ run_qemu() {
 		-drive if=pflash,format=raw,readonly,file=/usr/share/ovmf/x64/OVMF_CODE.fd \
 		-virtfs local,path=$DIR/..,security_model=passthrough,mount_tag=arch-rebuild \
 		"$@"
-		# -nographic (boot kernel with console=ttyS0)
+		# -nographic (boot kernel with `console=ttyS0', edit boot entry with `e')
 }
 
 case $1 in

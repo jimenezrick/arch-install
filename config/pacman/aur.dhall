@@ -3,7 +3,7 @@
 , "auracle-git"
 , "gliv"
 , "lemonbar-git"
-, "metastore-git"
 , "mu-git"
+, "nmtree"
 , "xtitle-git"
 ]

@@ -10,4 +10,4 @@ to_dhall() {
 
 pacman -Qqen | to_dhall >$DIR/packages.dhall
 pacman -Qqem | to_dhall >$DIR/aur.dhall
-pacman -Qg | awk '{print $1}' | sort -u | to_dhall >$DIR/groups.dhall
+pacman -Qg | awk '{print $1}' | sort -u | grep -Ev 'gnome|qt|vulkan' | to_dhall >$DIR/groups.dhall
