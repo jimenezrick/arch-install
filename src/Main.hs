@@ -47,10 +47,7 @@ main :: IO ()
 main = do
     cmd <- pack <$> getProgName >>= getRecord
     let run =
-            case cmd
-                -- TODO: fetch /etc + /home BTRFS subvols
-                -- /etc inside /home and copy on rootfs (hard link?)
-                  of
+            case cmd of
                 WipeRootDisk confPath -> do
                     sysConf <- temporarySystemConfig <$> loadSystemConfig confPath
                     doPreInstallChecks sysConf

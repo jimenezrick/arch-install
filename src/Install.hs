@@ -49,7 +49,6 @@ buildArch loadedSysConf = do
         buildRootfs sysConf espDev luksRootfsDev $ \espMnt rootfsMnt -> do
             configureRootfsChroot sysConf rootfsMnt
             renderBootEntries sysConf espMnt
-            -- TODO: build AUR with auracle
 
 buildRootfs ::
        (MonadIO m, MonadReader env m, HasLogFunc env)
