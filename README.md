@@ -11,5 +11,5 @@ wifi-menu
 
 ``` shell
 sudo tools/boot-qemu.sh iso -nographic
-bash <(curl -sL https://git.io/Jer4x)  # It mounts this repo locally and runs tools/bootstrap-qemu.sh
+bash <(curl -sL https://git.io/Jer4x)  # It mounts this repo locally and builds (using tools/bootstrap-qemu.sh)
 ```
