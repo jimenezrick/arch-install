@@ -70,7 +70,10 @@ buildRootfs sysConf espDev rootfsDev f = do
     maybe (return ()) renderMirrorlist $ sysConf ^. pacman . mirrorlist
     bootstrapArch
     f espMnt rootfsMnt
-    takeSubvolSnapshot (fromList $ sysConf ^. storage . rootSubvolumes) "@" "initial-build"
+    takeSubvolSnapshot
+        (fromList $ sysConf ^. storage . rootSubvolumes)
+        ("@" :: FilePath)
+        ("initial-build" :: FilePath)
     umountAllUnder rootfsMnt
   where
     rootfsMnt = "/mnt/arch-rootfs"
