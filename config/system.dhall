@@ -12,4 +12,6 @@
       ./storage.dhall espPartUuid rootfsLuksUuid
   , pacman =
       ./pacman.dhall
+  , custom =
+      ./custom.dhall
   }

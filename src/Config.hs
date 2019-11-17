@@ -91,6 +91,7 @@ data SystemConfig = SystemConfig
     , _keymap :: Text
     , _storage :: StorageConfig
     , _pacman :: PacmanConfig
+    , _custom :: Maybe [(FilePath, Text)]
     } deriving (Show, Generic)
 
 instance Interpret SystemConfig

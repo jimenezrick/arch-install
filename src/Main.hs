@@ -4,11 +4,14 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 import RIO
+import RIO.FilePath
 import RIO.Process
 import RIO.Text (pack)
 
+import Data.String.Interpolate
 import Options.Generic
 import Text.Show.Pretty (pPrint)
 import UnliftIO.Environment (getProgName)
@@ -58,7 +61,7 @@ main = do
                 ConfigureRootfs buildInfoPath -> do
                     buildInfo <- loadBuildInfo buildInfoPath
                     configureRootfs $ buildInfo ^. systemConfig
-                    customizeRootfs
+                    customizeRootfs $ buildInfo ^. systemConfig . custom
                 ShowBuildInfo buildInfoPath -> do
                     buildInfo <- loadBuildInfo buildInfoPath
                     liftIO $ pPrint buildInfo
@@ -77,11 +80,22 @@ runApp m =
             let simpleApp = App {saLogFunc = lf, saProcessContext = pc}
              in runRIO simpleApp m
 
-customizeRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => m ()
-customizeRootfs = do
+customizeRootfs ::
+       (MonadIO m, MonadReader env m, HasLogFunc env) => Maybe [(FilePath, Text)] -> m ()
+customizeRootfs custom = do
     logInfo "Customizing rootfs to my liking"
     createFsTree $
         Dir
             "/mnt"
             defAttrs
             [Dir "scratch" defAttrs [], Dir "garage" defAttrs [], Dir "usb" defAttrs []]
+    maybe
+        (return ())
+        (mapM_ $ \(path, content) -> do
+             logInfo $ fromString [i|Creating file: #{path}|]
+             createFsTree $ File path (Content content) (withAttrs path))
+        custom
+  where
+    withAttrs path
+        | "/var/lib/iwd" <- takeDirectory path = (Just 0o600, Just ("root", "root"))
+        | otherwise = defAttrs
