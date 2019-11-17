@@ -18,6 +18,7 @@ import UnliftIO.Environment (getProgName)
 
 import Checks
 import Chroot
+import Command
 import Config
 import FsTree
 import Install
@@ -27,6 +28,7 @@ data CmdOpts
     = WipeRootDisk { confPath :: FilePath }
     | BuildArch { confPath :: FilePath }
     | ConfigureRootfs { buildInfoPath :: FilePath }
+    | RestoreEtc { etcSrc :: FilePath }
     | ShowBuildInfo { buildInfoPath :: FilePath }
     | Version
     deriving (Generic)
@@ -62,6 +64,9 @@ main = do
                     buildInfo <- loadBuildInfo buildInfoPath
                     configureRootfs $ buildInfo ^. systemConfig
                     customizeRootfs $ buildInfo ^. systemConfig . custom
+                RestoreEtc etcSrc -> do
+                    runCmds_ ["rm -r /etc", [i|git clone #{etcSrc} /etc|]]
+                    logInfo "NOTE: you need to update /etc/fstab and restore file permissions"
                 ShowBuildInfo buildInfoPath -> do
                     buildInfo <- loadBuildInfo buildInfoPath
                     liftIO $ pPrint buildInfo
