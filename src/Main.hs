@@ -5,15 +5,11 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
-
-module Main where
 
 import RIO
 import RIO.Process
 import RIO.Text (pack)
 
-import GitHash
 import Options.Generic
 import Text.Show.Pretty (pPrint)
 import UnliftIO.Environment (getProgName)
@@ -23,6 +19,7 @@ import Chroot
 import Config
 import FsTree
 import Install
+import Version
 
 data CmdOpts
     = WipeRootDisk { confPath :: FilePath }
@@ -67,8 +64,7 @@ main = do
                     buildInfo <- loadBuildInfo buildInfoPath
                     liftIO $ pPrint buildInfo
                 Version -> do
-                    let gitInfo = $$tGitInfoCwd
-                    liftIO $ pPrint gitInfo
+                    liftIO $ pPrint version
     runApp $ do
         catch run (\(ex :: SomeException) -> logError (displayShow ex) >> liftIO exitFailure)
         logInfo "Done"
