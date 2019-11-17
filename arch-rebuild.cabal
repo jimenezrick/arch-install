@@ -47,3 +47,4 @@ executable arch-rebuild
                      , network-uri
                      , binary
                      , pretty-show
+                     , githash
