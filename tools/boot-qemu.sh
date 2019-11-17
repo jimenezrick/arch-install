@@ -20,6 +20,7 @@ case $1 in
 	iso)
 		shift
 		run_qemu \
+			-device virtio-rng-pci \
 			-device virtio-scsi-pci,id=scsi0 \
 			-drive file=$DISK,if=none,format=raw,discard=unmap,aio=native,cache=none,id=hd0 \
 			-device scsi-hd,drive=hd0,bus=scsi0.0 \
@@ -30,6 +31,7 @@ case $1 in
 	disk)
 		shift
 		run_qemu \
+			-device virtio-rng-pci \
 			-device virtio-scsi-pci,id=scsi0 \
 			-drive file=$DISK,if=none,format=raw,discard=unmap,aio=native,cache=none,id=hd0 \
 			-device scsi-hd,drive=hd0,bus=scsi0.0 \
