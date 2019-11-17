@@ -65,7 +65,7 @@ main = do
                     configureRootfs $ buildInfo ^. systemConfig
                     customizeRootfs $ buildInfo ^. systemConfig . custom
                 RestoreEtc etcSrc -> do
-                    runCmds_ ["rm -r /etc", [i|git clone #{etcSrc} /etc|]]
+                    runCmds_ ["rm -r /etc", [i|git clone #{etcSrc} /etc|], "chmod 700 /etc/.git"]
                     logInfo "NOTE: you need to update /etc/fstab and restore file permissions"
                 ShowBuildInfo buildInfoPath -> do
                     buildInfo <- loadBuildInfo buildInfoPath
