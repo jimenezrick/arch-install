@@ -1,3 +1,0 @@
-Enter pressing F2 on boot:
-- Enable IOMMU controller
-- Enable AC back on memory
