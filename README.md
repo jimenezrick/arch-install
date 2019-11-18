@@ -18,7 +18,7 @@ bash <(curl -sL https://git.io/Jer4x)  # It mounts this repo locally and builds 
 
 - Get /home BTRFS snapshot
 - Restore /etc with: `arch-rebuild restore-etc`
-- Install AUR packages (install auracle first) with: `arch-rebuild install-aur-package`
+- (**TODO**) Install AUR packages (install auracle first) with: `arch-rebuild install-aur-package`
 
 ## My BIOS quirks
 

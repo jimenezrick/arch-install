@@ -29,6 +29,7 @@ data CmdOpts
     | BuildArch { confPath :: FilePath }
     | ConfigureRootfs { buildInfoPath :: FilePath }
     | RestoreEtc { etcSrc :: FilePath }
+    | InstallAurPackage { pkg :: String } -- TODO
     | ShowBuildInfo { buildInfoPath :: FilePath }
     | Version
     deriving (Generic)
@@ -98,9 +99,14 @@ customizeRootfs custom = do
         (return ())
         (mapM_ $ \(path, content) -> do
              logInfo $ fromString [i|Creating file: #{path}|]
-             createFsTree $ File path (Content content) (withAttrs path))
+             createFile path content)
         custom
   where
-    withAttrs path
-        | "/var/lib/iwd" <- takeDirectory path = (Just 0o600, Just ("root", "root"))
-        | otherwise = defAttrs
+    createFile path content
+        | "/var/lib/iwd" <- takeDirectory path =
+            createFsTree $
+            Dir
+                "/var/lib/iwd"
+                (Just 0o700, Just ("root", "root"))
+                [File (takeFileName path) (Content content) (Just 0o600, Just ("root", "root"))]
+        | otherwise = createFsTree $ File path (Content content) defAttrs
