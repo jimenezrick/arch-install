@@ -40,7 +40,7 @@ executable arch-rebuild
                      , unliftio
                      , interpolate
                      , dhall
-                     , o-clock
+                     , time-units
                      , lens
                      , lens-aeson
                      , aeson

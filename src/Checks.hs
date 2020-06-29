@@ -4,12 +4,12 @@
 
 module Checks where
 
-import RIO hiding (threadDelay)
+import RIO
 import RIO.Directory
 import RIO.Process
 
 import System.Posix.User (getEffectiveUserID)
-import Time.Units (Second, Time(..), threadDelay)
+import Data.Time.Units
 
 import Config
 import Disk
@@ -56,6 +56,6 @@ isNetworkReady =
 isClockSynced :: MonadIO m => m Bool
 isClockSynced = do
     runProcess_ "timedatectl set-ntp true"
-    threadDelay (Time @Second 2)
+    threadDelay . fromIntegral $ toMicroseconds @Second 2
     (1 ==) . length . linesMatchingExactWords (["synchronized:", "yes"] :: [String]) <$>
         readProcessStdout_ "timedatectl status"
