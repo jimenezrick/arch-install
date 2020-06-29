@@ -29,7 +29,7 @@ executable arch-rebuild
                      , Error
                      , Version
 
-  build-depends:       base ^>=4.12.0.0
+  build-depends:       base ==4.*
                      , data-default-class
                      , unix
                      , text
@@ -50,3 +50,6 @@ executable arch-rebuild
                      , binary
                      , pretty-show
                      , githash
+
+                     -- https://github.com/well-typed/cborg/issues/242
+                     , primitive ==0.7.0.1
