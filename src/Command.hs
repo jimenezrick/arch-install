@@ -3,7 +3,7 @@ module Command where
 import RIO hiding (lines)
 import RIO.List.Partial (head)
 import RIO.Process
-import RIO.Text (Text, lines)
+import RIO.Text (lines)
 
 import Data.String.Conversions (cs)
 

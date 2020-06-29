@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Config where
 
@@ -13,6 +14,7 @@ import Control.Lens
 import Data.Binary
 import Data.String.Conversions (cs)
 import Dhall
+import GHC.Generics (Rep)
 import Network.URI (isURI)
 
 import qualified RIO.Text as T
@@ -26,7 +28,7 @@ data BlockDev
                          , _partNum :: Natural }
     deriving (Show, Generic)
 
-instance Interpret BlockDev
+instance FromDhall BlockDev
 
 instance Binary BlockDev
 
@@ -41,7 +43,7 @@ data FstabEntry = FstabEntry
     , _fsck :: Natural
     } deriving (Show, Generic)
 
-instance Interpret FstabEntry
+instance FromDhall FstabEntry
 
 instance Binary FstabEntry
 
@@ -52,7 +54,7 @@ data BootConfig = BootConfig
     , _bootEntries :: [(Text, Text)]
     } deriving (Show, Generic)
 
-instance Interpret BootConfig
+instance FromDhall BootConfig
 
 instance Binary BootConfig
 
@@ -65,7 +67,7 @@ data StorageConfig = StorageConfig
     , _fstabEntries :: [FstabEntry]
     } deriving (Show, Generic)
 
-instance Interpret StorageConfig
+instance FromDhall StorageConfig
 
 instance Binary StorageConfig
 
@@ -78,7 +80,7 @@ data PacmanConfig = PacmanConfig
     , _aurPackages :: [Text]
     } deriving (Show, Generic)
 
-instance Interpret PacmanConfig
+instance FromDhall PacmanConfig
 
 instance Binary PacmanConfig
 
@@ -94,7 +96,7 @@ data SystemConfig = SystemConfig
     , _custom :: Maybe [(FilePath, Text)]
     } deriving (Show, Generic)
 
-instance Interpret SystemConfig
+instance FromDhall SystemConfig
 
 instance Binary SystemConfig
 
@@ -110,13 +112,15 @@ instance Binary BuildInfo
 
 makeLenses ''BuildInfo
 
-type LoadedSystemConfig = Text -> Text -> SystemConfig
+newtype LoadedSystemConfig =
+    LoadedSystemConfig (Text -> Text -> SystemConfig)
+    deriving Generic
 
 temporarySystemConfig :: LoadedSystemConfig -> SystemConfig
-temporarySystemConfig loadedSysConf = loadedSysConf undefined undefined
+temporarySystemConfig (LoadedSystemConfig loadedSysConf) = loadedSysConf undefined undefined
 
-auto' :: Interpret a => Type a
-auto' = autoWith (defaultInterpretOptions {fieldModifier = T.dropWhile (== '_')})
+auto' :: (Generic a, GenericFromDhall a (Rep a)) => Decoder a
+auto' = genericAutoWith (defaultInterpretOptions {fieldModifier = T.dropWhile (== '_')})
 
 loadSystemConfig :: MonadIO m => FilePath -> m LoadedSystemConfig
 loadSystemConfig path'

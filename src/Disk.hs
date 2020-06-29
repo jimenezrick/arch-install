@@ -8,11 +8,11 @@
 
 module Disk where
 
-import RIO hiding (to, words)
+import RIO hiding (to, words, (^?), (^..))
 import RIO.FilePath
 import RIO.Process
 
-import Control.Lens hiding (children)
+import Control.Lens
 import Data.Aeson (Value(..), eitherDecode')
 import Data.Aeson.Lens
 import Data.String.Interpolate
@@ -30,7 +30,7 @@ data RootDiskInstallInfo = RootDiskInstallInfo
     } deriving (Show)
 
 resolveSystemConfig :: LoadedSystemConfig -> RootDiskInstallInfo -> SystemConfig
-resolveSystemConfig loadedSysConf installInfo =
+resolveSystemConfig (LoadedSystemConfig loadedSysConf) installInfo =
     loadedSysConf (toText $ espPartUuid installInfo) (toText $ rootfsLuksUuid installInfo)
 
 getRootDiskInstallInfo :: MonadIO m => FilePath -> FilePath -> m RootDiskInstallInfo
