@@ -1,3 +1,7 @@
 packages: .
 
+package arch-rebuild
+  ghc-options: -j +RTS -A64m -RTS
+
+with-compiler: ghc-8.10.1 
 write-ghc-environment-files: always
