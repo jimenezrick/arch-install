@@ -27,6 +27,7 @@ executable arch-rebuild
                      , Match
                      , Fstab
                      , Error
+                     , AUR
                      , Version
 
   build-depends:       base ==4.*
@@ -37,6 +38,7 @@ executable arch-rebuild
                      , optparse-generic
                      , mtl
                      , rio
+                     , typed-process
                      , unliftio
                      , interpolate
                      , dhall
