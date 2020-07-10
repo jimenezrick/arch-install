@@ -2,35 +2,31 @@
 
 module AUR where
 
-import RIO
-import RIO.Process
-import RIO.Text (unpack)
-
-import Data.String.Interpolate
-
 import Command
+import Data.String.Interpolate
+import RIO
+import RIO.FilePath
+import RIO.Process
 
-buildAurPackage :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => Bool -> String -> m ()
-buildAurPackage install pkg = do
-    installAuracle -- XXX: only if not installed
-    doesExecutableExist "caca" >>= traceShowIO
-    runCmd_ [i|caca2|]
-    -- runCmd_ [i|makepkg -a #{pkg}|]
-        {-
-        --syncdeps
-        --install
-        --rmdeps
-        --asdeps
+buildAURPackage :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => Bool -> FilePath -> m ()
+buildAURPackage install path = do
+  withWorkingDir path do
+    runCmd_ [i|makepkg #{unwords flags}|]
+  where
+    flags = ["--syncdeps", "--rmdeps"] ++ if install then ["--install"] else []
 
--}
+installAURPackage :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => String -> m ()
+installAURPackage pkg = do
+  withSystemTempDirectory "arch-rebuild-aur-" \dir -> do
+    withWorkingDir dir do
+      fetchAURPackage pkg
+    buildAURPackage True $ dir </> pkg
+
+fetchAURPackage :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => String -> m ()
+fetchAURPackage pkg = do
+  runCmd_ [i|curl #{url} | tar zxf -|]
+  where
+    url = [i|https://aur.archlinux.org/cgit/aur.git/snapshot/#{pkg}.tar.gz|]
 
 installAuracle :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => m ()
-installAuracle = do
-    withSystemTempDirectory "aur-build-" $ \d -> do
-        traceShowIO d
-        withWorkingDir d $ do
-            runCmd_ "pwd"
-            -- runCmd_ [i|curl #{url} | tar zxf -|]
-            -- withWorkingDir "auracle-git" $ runCmd_ "ls"
-  where
-    url = "https://aur.archlinux.org/cgit/aur.git/snapshot/auracle-git.tar.gz"
+installAuracle = installAURPackage "auracle-git"
