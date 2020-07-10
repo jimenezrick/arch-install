@@ -7,6 +7,7 @@ module Install where
 import RIO hiding (lookup)
 import RIO.Directory
 import RIO.FilePath
+import RIO.Process
 import RIO.List (sortOn)
 import RIO.Map (fromList, lookup, member)
 
@@ -24,7 +25,7 @@ import Filesystem
 import FsTree
 import Fstab
 
-wipeRootDisk :: (MonadUnliftIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
+wipeRootDisk :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env, HasLogFunc env) => SystemConfig -> m ()
 wipeRootDisk sysConf = do
     rootDiskInfo <- getDiskInfo $ sysConf ^. storage . rootDisk
     case rootDiskInfo of
@@ -37,7 +38,7 @@ wipeRootDisk sysConf = do
         logInfo $ fromString [i|Wiping device: #{dev}|]
         runCmd_ [i|wipefs -a #{dev}|]
 
-buildArch :: (MonadUnliftIO m, MonadReader env m, HasLogFunc env) => LoadedSystemConfig -> m ()
+buildArch :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env, HasLogFunc env) => LoadedSystemConfig -> m ()
 buildArch loadedSysConf = do
     logInfo "Starting Arch Linux build"
     (espDev, rootfsDev) <- partitionDisk $ temporarySystemConfig loadedSysConf ^. storage . rootDisk
@@ -50,7 +51,7 @@ buildArch loadedSysConf = do
             renderBootEntries sysConf espMnt
 
 buildRootfs ::
-       (MonadIO m, MonadReader env m, HasLogFunc env)
+       (MonadIO m, MonadReader env m, HasProcessContext env, HasLogFunc env)
     => SystemConfig
     -> FilePath
     -> FilePath
@@ -109,7 +110,7 @@ buildRootfs sysConf espDev rootfsDev f = do
                 [i|btrfs subvolume snapshot -r #{targetMnt} #{snapshotsMnt <//> targetSubvol}-#{targetName}|]
 
 partitionDisk ::
-       (MonadIO m, MonadReader env m, HasLogFunc env) => BlockDev -> m (FilePath, FilePath)
+       (MonadIO m, MonadReader env m, HasProcessContext env, HasLogFunc env) => BlockDev -> m (FilePath, FilePath)
 partitionDisk other
     | (FsUUID _) <- other = invalid
     | (PartUUID _) <- other = invalid
@@ -131,7 +132,7 @@ partitionDisk blockdev = do
     return (espDev, rootfsDev)
 
 makeFilesystemsPartitions ::
-       (MonadIO m, MonadReader env m, HasLogFunc env) => FilePath -> FilePath -> m ()
+       (MonadIO m, MonadReader env m, HasProcessContext env, HasLogFunc env) => FilePath -> FilePath -> m ()
 makeFilesystemsPartitions espDev rootfsDev = do
     logInfo $ fromString [i|Formatting ESP partition as FAT32: #{espDev}|]
     runCmd_ [i|mkfs.fat -F32 #{espDev}|]
@@ -139,7 +140,7 @@ makeFilesystemsPartitions espDev rootfsDev = do
     runCmd_ [i|mkfs.btrfs #{rootfsDev}|]
 
 withEncryptedRootfs ::
-       (MonadUnliftIO m, MonadReader env m, HasLogFunc env)
+       (MonadUnliftIO m, MonadReader env m, HasProcessContext env, HasLogFunc env)
     => FilePath
     -> (FilePath -> m ())
     -> m ()

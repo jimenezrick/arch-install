@@ -2,17 +2,15 @@
 
 module Match where
 
-import RIO hiding (lines, words)
-import RIO.List (isSubsequenceOf)
-import RIO.Text (Text, lines, pack, words)
-
-import Data.String.Conversions
-
 import qualified Data.Attoparsec.Combinator as A
 import qualified Data.Attoparsec.Text as A
+import Data.String.Conversions
+import RIO hiding (lines, words)
+import RIO.List (isSubsequenceOf)
+import RIO.Text (lines, pack, words)
 
 linesMatchingExactWords ::
-       (ConvertibleStrings a Text, ConvertibleStrings b Text) => [a] -> b -> [Text]
+  (ConvertibleStrings a Text, ConvertibleStrings b Text) => [a] -> b -> [Text]
 linesMatchingExactWords words' txt = filter (isSubsequenceOf words'' . words) . lines $ cs txt
   where
     words'' = map cs words'

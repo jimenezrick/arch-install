@@ -5,6 +5,7 @@ module Chroot where
 
 import RIO
 import RIO.Directory
+import RIO.Process
 import RIO.FilePath (makeRelative, replaceDirectory, replaceFileName, takeFileName)
 
 import Data.String.Interpolate
@@ -15,7 +16,7 @@ import Config
 import FilePath ((<//>))
 
 runBinInChroot ::
-       (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> FilePath -> String -> m ()
+       (MonadIO m, MonadReader env m, HasProcessContext env, HasLogFunc env) => SystemConfig -> FilePath -> String -> m ()
 runBinInChroot sysConf rootfsMnt binCmd = do
     (chrootBin, chrootConf) <- copyExecutableWithBuildInfo sysConf rootfsMnt
     let chrootBin' = makeRelative rootfsMnt chrootBin
@@ -24,10 +25,10 @@ runBinInChroot sysConf rootfsMnt binCmd = do
     runCmd_ [i|arch-chroot #{rootfsMnt} #{chrootBin'} #{binCmd} --build-info-path #{chrootConf'}|]
 
 configureRootfsChroot ::
-       (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> FilePath -> m ()
+       (MonadIO m, MonadReader env m, HasProcessContext env, HasLogFunc env) => SystemConfig -> FilePath -> m ()
 configureRootfsChroot sysConf rootfsMnt = runBinInChroot sysConf rootfsMnt "configure-rootfs"
 
-configureRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => SystemConfig -> m ()
+configureRootfs :: (MonadIO m, MonadReader env m, HasProcessContext env, HasLogFunc env) => SystemConfig -> m ()
 configureRootfs SystemConfig {..} =
     runCmds_
         [ [i|ln -sf /usr/share/zoneinfo/#{_zoneInfo} /etc/localtime|]
