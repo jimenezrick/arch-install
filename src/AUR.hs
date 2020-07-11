@@ -27,6 +27,3 @@ fetchAURPackage pkg = do
   runCmd_ [i|curl #{url} | tar zxf -|]
   where
     url = [i|https://aur.archlinux.org/cgit/aur.git/snapshot/#{pkg}.tar.gz|]
-
-installAuracle :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => m ()
-installAuracle = installAURPackage "auracle-git"
