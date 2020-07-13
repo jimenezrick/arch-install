@@ -5,7 +5,7 @@ set -euo pipefail
 DIR=$(cd $(dirname $0); pwd)
 
 to_dhall() {
-	jq -R | jq -s | dhall-format
+	jq -R | jq -s | dhall format
 }
 
 pacman -Qqen | to_dhall >$DIR/packages.dhall

@@ -1,6 +1,5 @@
-[ "alacritty-git"
-, "alacritty-terminfo-git"
-, "auracle-git"
+[ "auracle-git"
+, "ghcup-hs-bin"
 , "gliv"
 , "lemonbar-git"
 , "mu-git"

@@ -1,5 +1,4 @@
-[ "base"
-, "base-devel"
+[ "base-devel"
 , "linux-tools"
 , "texlive-most"
 , "xorg"
