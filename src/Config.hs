@@ -3,6 +3,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DerivingVia #-}
 
 module Config where
 
@@ -14,7 +16,7 @@ import Control.Lens
 import Data.Binary
 import Data.String.Conversions (cs)
 import Dhall
-import GHC.Generics (Rep)
+import Dhall.Deriving
 import Network.URI (isURI)
 
 import qualified RIO.Text as T
@@ -27,8 +29,7 @@ data BlockDev
     | DiskModelPartition { _diskModel :: Text
                          , _partNum :: Natural }
     deriving (Show, Generic)
-
-instance FromDhall BlockDev
+    deriving FromDhall via Codec (Field (DropPrefix "_")) BlockDev
 
 instance Binary BlockDev
 
@@ -42,8 +43,7 @@ data FstabEntry = FstabEntry
     , _fsDump :: Natural
     , _fsck :: Natural
     } deriving (Show, Generic)
-
-instance FromDhall FstabEntry
+    deriving FromDhall via Codec (Field (DropPrefix "_")) FstabEntry
 
 instance Binary FstabEntry
 
@@ -53,8 +53,7 @@ data BootConfig = BootConfig
     { _loaderConf :: Text
     , _bootEntries :: [(Text, Text)]
     } deriving (Show, Generic)
-
-instance FromDhall BootConfig
+    deriving FromDhall via Codec (Field (DropPrefix "_")) BootConfig
 
 instance Binary BootConfig
 
@@ -66,8 +65,7 @@ data StorageConfig = StorageConfig
     , _boot :: BootConfig
     , _fstabEntries :: [FstabEntry]
     } deriving (Show, Generic)
-
-instance FromDhall StorageConfig
+    deriving FromDhall via Codec (Field (DropPrefix "_")) StorageConfig
 
 instance Binary StorageConfig
 
@@ -79,8 +77,7 @@ data PacmanConfig = PacmanConfig
     , _groups :: [Text]
     , _aurPackages :: [Text]
     } deriving (Show, Generic)
-
-instance FromDhall PacmanConfig
+    deriving FromDhall via Codec (Field (DropPrefix "_")) PacmanConfig
 
 instance Binary PacmanConfig
 
@@ -95,8 +92,7 @@ data SystemConfig = SystemConfig
     , _pacman :: PacmanConfig
     , _custom :: Maybe [(FilePath, Text)]
     } deriving (Show, Generic)
-
-instance FromDhall SystemConfig
+    deriving FromDhall via Codec (Field (DropPrefix "_")) SystemConfig
 
 instance Binary SystemConfig
 
@@ -116,16 +112,15 @@ newtype LoadedSystemConfig =
     LoadedSystemConfig (Text -> Text -> SystemConfig)
     deriving Generic
 
+instance FromDhall LoadedSystemConfig
+
 temporarySystemConfig :: LoadedSystemConfig -> SystemConfig
 temporarySystemConfig (LoadedSystemConfig loadedSysConf) = loadedSysConf undefined undefined
 
-auto' :: (Generic a, GenericFromDhall a (Rep a)) => Decoder a
-auto' = genericAutoWith (defaultInterpretOptions {fieldModifier = T.dropWhile (== '_')})
-
 loadSystemConfig :: MonadIO m => FilePath -> m LoadedSystemConfig
 loadSystemConfig path'
-    | isURI path' = liftIO $ input auto' $ T.pack path'
-    | otherwise = liftIO $ inputFile auto' path'
+    | isURI path' = liftIO $ input auto $ T.pack path'
+    | otherwise = liftIO $ inputFile auto path'
 
 getBuildInfo :: MonadIO m => SystemConfig -> m BuildInfo
 getBuildInfo sysConf = do

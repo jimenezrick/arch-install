@@ -1,16 +1,13 @@
-  λ(espPartUuid : Text)
-→ λ(rootfsLuksUuid : Text)
-→ let BlockDev = ./blockdev.dhall
+λ(espPartUuid : Text) →
+λ(rootfsLuksUuid : Text) →
+  let BlockDev = ./blockdev.dhall
 
-  in  { rootDisk =
-          BlockDev.DiskModel { model = "QEMU_HARDDISK" }
+  in  { rootDisk = BlockDev.DiskModel { model = "QEMU_HARDDISK" }
       , rootSubvolumes =
-          [ { `1` = "@", `2` = "/" }
-          , { `1` = "@home", `2` = "/home" }
-          , { `1` = "@snapshots", `2` = "/.snapshots" }
-          ]
-      , boot =
-          ./boot.dhall rootfsLuksUuid
-      , fstabEntries =
-          ./fstab.dhall espPartUuid
+        [ { _1 = "@", _2 = "/" }
+        , { _1 = "@home", _2 = "/home" }
+        , { _1 = "@snapshots", _2 = "/.snapshots" }
+        ]
+      , boot = ./boot.dhall rootfsLuksUuid
+      , fstabEntries = ./fstab.dhall espPartUuid
       }
