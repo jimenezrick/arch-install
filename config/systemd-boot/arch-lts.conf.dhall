@@ -1,5 +1,5 @@
-  λ(luksUuid : Text)
-→ ''
+λ(luksUuid : Text) →
+  ''
   title   Arch Linux LTS
   linux   /vmlinuz-linux-lts
   initrd  /amd-ucode.img
