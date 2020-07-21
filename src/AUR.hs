@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 module AUR where
@@ -7,23 +8,23 @@ import Data.String.Interpolate
 import RIO
 import RIO.FilePath
 import RIO.Process
+import RIO.Map (insert)
+import RIO.Text (pack)
 
-buildAURPackage :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => Bool -> FilePath -> m ()
-buildAURPackage install path = do
-  withWorkingDir path do
-    runCmd_ [i|makepkg #{unwords flags}|]
-  where
-    flags = ["--syncdeps", "--rmdeps"] ++ if install then ["--install"] else []
-
-installAURPackage :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => String -> m ()
-installAURPackage pkg = do
-  withSystemTempDirectory "arch-rebuild-aur-" \dir -> do
-    withWorkingDir dir do
+buildAURPackage :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => FilePath -> String -> m ()
+buildAURPackage dest pkg = do
+  withSystemTempDirectory "arch-rebuild-makepkg-" \tmp -> do
+    withWorkingDir tmp do
       fetchAURPackage pkg
-    buildAURPackage True $ dir </> pkg
+    withWorkingDir (tmp </> pkg) do
+      withModifyEnvVars (insert "PKGDEST" $ pack dest) do
+        runCmd_ "makepkg --syncdeps --rmdeps"
+
+installAURPackage :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => FilePath -> m ()
+installAURPackage path = runCmd_ [i|pacman -U #{path}|]
 
 fetchAURPackage :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => String -> m ()
 fetchAURPackage pkg = do
-  runCmd_ [i|curl #{url} | tar zxf -|]
+  runCmd_ [i|curl -L #{url} | tar zxf -|]
   where
     url = [i|https://aur.archlinux.org/cgit/aur.git/snapshot/#{pkg}.tar.gz|]

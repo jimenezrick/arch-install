@@ -75,7 +75,7 @@ data PacmanConfig = PacmanConfig
     { _mirrorlist :: Maybe [Text]
     , _packages :: [Text]
     , _groups :: [Text]
-    , _aurPackages :: [Text]
+    , _aur :: [Text]
     } deriving (Show, Generic)
     deriving FromDhall via Codec (Field (DropPrefix "_")) PacmanConfig
 

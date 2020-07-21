@@ -18,7 +18,7 @@ import Options.Generic
 import RIO
 import RIO.FilePath
 import RIO.Process
-import RIO.Text (pack)
+import RIO.Text (pack, unpack)
 import Text.Show.Pretty (pPrint)
 import UnliftIO.Environment (getProgName)
 import Version
@@ -28,10 +28,7 @@ data CmdOpts
   | BuildArch {confPath :: FilePath}
   | ConfigureRootfs {buildInfoPath :: FilePath}
   | RestoreEtc {etcSrc :: FilePath}
-  | BuildAurPackage
-      { install :: Bool,
-        pkg :: String
-      }
+  | BuildAurPackages {confPath :: FilePath, dest :: FilePath}
   | ShowBuildInfo {buildInfoPath :: FilePath}
   | Version
   deriving (Generic)
@@ -69,9 +66,10 @@ main = do
             customizeRootfs $ buildInfo ^. systemConfig . custom
           RestoreEtc etcSrc -> do
             runCmds_ ["rm -r /etc", [i|git clone #{etcSrc} /etc|], "chmod 700 /etc/.git"]
-            logInfo "NOTE: you need to update /etc/fstab and restore file permissions"
-          BuildAurPackage install pkg -> do
-            buildAURPackage install pkg
+            logInfo "NOTE: you need to update /etc/fstab and restore file permissions" -- XXX: use mtree directly with arch-chroot?
+          BuildAurPackages confPath dest -> do
+            sysConf <- temporarySystemConfig <$> loadSystemConfig confPath
+            forM_ (unpack <$> sysConf ^. pacman . aur) (buildAURPackage dest)
           ShowBuildInfo buildInfoPath -> do
             buildInfo <- loadBuildInfo buildInfoPath
             liftIO $ pPrint buildInfo
@@ -90,6 +88,7 @@ runApp m =
       let simpleApp = App {saLogFunc = lf, saProcessContext = pc}
        in runRIO simpleApp m
 
+-- TODO: Have secrets.dhall?
 customizeRootfs ::
   (MonadIO m, MonadReader env m, HasLogFunc env) => Maybe [(FilePath, Text)] -> m ()
 customizeRootfs custom = do
