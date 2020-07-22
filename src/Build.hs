@@ -53,9 +53,6 @@ buildArch loadedSysConf = do
             configureRootfsChroot sysConf rootfsMnt
             renderBootEntries sysConf espMnt
 
-umountRootfs :: (MonadIO m, MonadReader env m, HasProcessContext env) => m ()
-umountRootfs = umountAllUnder rootfsMnt
-
 buildRootfs ::
        (MonadIO m, MonadReader env m, HasProcessContext env, HasLogFunc env)
     => SystemConfig
@@ -77,10 +74,12 @@ buildRootfs sysConf espDev rootfsDev f = do
     maybe (return ()) renderMirrorlist $ sysConf ^. pacman . mirrorlist
     bootstrapArch
     f espMnt rootfsMnt
+    -- Take snapshots
     takeSubvolSnapshot
         (fromList $ sysConf ^. storage . rootSubvolumes)
         ("@" :: FilePath)
         ("initial-build" :: FilePath)
+    umountAllUnder rootfsMnt
   where
     espMnt = rootfsMnt <//> "boot"
     createDiskSubvols subvols = do

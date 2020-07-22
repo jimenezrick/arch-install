@@ -70,7 +70,6 @@ main = do
                 logInfo "Installing pre-built AUR packages"
                 pkgs <- map (dir </>) . filter (isInfixOf ".pkg.tar.") <$> listDirectory dir
                 forM_ pkgs installAURPackage
-            umountRootfs
           ConfigureRootfs buildInfoPath -> do
             buildInfo <- loadBuildInfo buildInfoPath
             configureRootfs $ buildInfo ^. systemConfig
