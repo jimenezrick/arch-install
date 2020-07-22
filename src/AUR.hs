@@ -6,6 +6,7 @@ module AUR where
 import Command
 import Data.String.Interpolate
 import RIO
+import RIO.Directory (makeAbsolute)
 import RIO.FilePath
 import RIO.Process
 import RIO.Map (insert)
@@ -17,7 +18,8 @@ buildAURPackage dest pkg = do
     withWorkingDir tmp do
       fetchAURPackage pkg
     withWorkingDir (tmp </> pkg) do
-      withModifyEnvVars (insert "PKGDEST" $ pack dest) do
+      absDest <- makeAbsolute dest
+      withModifyEnvVars (insert "PKGDEST" $ pack absDest) do
         runCmd_ "makepkg --syncdeps --rmdeps"
 
 installAURPackage :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => FilePath -> m ()
