@@ -4,22 +4,24 @@
 
 ``` shell
 wifi-menu
-./arch-rebuild build-arch -c https://raw.githubusercontent.com/jimenezrick/arch-install/master/config/system.dhall
+# Run the build using my system.dhall
+./arch-rebuild build-arch -c https://git.io/JJlfz
 ```
 
 + To boot an Arch ISO from a QEMU VM and bootstrap the whole process from your local repo:
 
 ``` shell
+# Generate all the AUR packages to be installed later during the build
+./arch-rebuild build-aur-packages -c config/system.dhall -d config/pacman/aur-packages
 sudo tools/boot-qemu.sh iso [-nographic]
-bash <(curl -sL https://git.io/Jer4x)  # It mounts this repo locally and builds (using tools/bootstrap-qemu.sh)
+# Mount this repo inside the VM and run the build (using tools/bootstrap-qemu.sh)
+bash <(curl -sL https://git.io/Jer4x)
 ```
 
 ## Things to setup later
 
 - Get /home BTRFS snapshot
-- Restore /etc with: `arch-rebuild restore-etc`
-- (**TODO**) Install AUR packages (install auracle first) with: `arch-rebuild install-aur-package`
-  Maybe have AUR packages already compiled?
+- Restore /etc with: `arch-rebuild restore-etc` (TODO: use mtree to restore file attributes)
 
 ## My BIOS quirks
 
