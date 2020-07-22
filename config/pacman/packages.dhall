@@ -12,7 +12,7 @@
 , "bash"
 , "bash-completion"
 , "bc"
-, "bind-tools"
+, "bind"
 , "binutils"
 , "bison"
 , "bmon"
