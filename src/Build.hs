@@ -25,6 +25,9 @@ import Filesystem
 import FsTree
 import Fstab
 
+rootfsMnt :: FilePath
+rootfsMnt = "/mnt/arch-rootfs"
+
 wipeRootDisk :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env, HasLogFunc env) => SystemConfig -> m ()
 wipeRootDisk sysConf = do
     rootDiskInfo <- getDiskInfo $ sysConf ^. storage . rootDisk
@@ -77,7 +80,6 @@ buildRootfs sysConf espDev rootfsDev f = do
         ("initial-build" :: FilePath)
     umountAllUnder rootfsMnt
   where
-    rootfsMnt = "/mnt/arch-rootfs"
     espMnt = rootfsMnt <//> "boot"
     createDiskSubvols subvols = do
         logInfo $ fromString [i|Creating BTRFS subvolumes on: #{rootfsDev}|]

@@ -3,14 +3,17 @@
 
 module AUR where
 
-import Command
-import Data.String.Interpolate
 import RIO
 import RIO.Directory (makeAbsolute)
 import RIO.FilePath
 import RIO.Process
 import RIO.Map (insert)
 import RIO.Text (pack)
+
+import Data.String.Interpolate
+
+import Build (rootfsMnt)
+import Command
 
 buildAURPackage :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => FilePath -> String -> m ()
 buildAURPackage dest pkg = do
@@ -23,7 +26,7 @@ buildAURPackage dest pkg = do
         runCmd_ "makepkg --syncdeps --rmdeps"
 
 installAURPackage :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => FilePath -> m ()
-installAURPackage path = runCmd_ [i|pacman -U #{path}|]
+installAURPackage path = runCmd_ [i|pacman --sysroot #{rootfsMnt} -U #{path}|]
 
 fetchAURPackage :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => String -> m ()
 fetchAURPackage pkg = do

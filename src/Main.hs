@@ -7,9 +7,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 import RIO
+import RIO.Directory (listDirectory)
 import RIO.FilePath
 import RIO.Process
 import RIO.Text (pack, unpack)
+import RIO.List (isInfixOf)
 
 import Data.String.Interpolate
 import Options.Generic
@@ -27,7 +29,7 @@ import Version
 
 data CmdOpts
   = WipeRootDisk {confPath :: FilePath}
-  | BuildArch {confPath :: FilePath}
+  | BuildArch {confPath :: FilePath, aurPkgsPath :: Maybe FilePath}
   | ConfigureRootfs {buildInfoPath :: FilePath}
   | RestoreEtc {etcSrc :: FilePath}
   | BuildAurPackages {confPath :: FilePath, dest :: FilePath}
@@ -58,10 +60,16 @@ main = do
             sysConf <- temporarySystemConfig <$> loadSystemConfig confPath
             doPreInstallChecks sysConf
             wipeRootDisk sysConf
-          BuildArch confPath -> do
+          BuildArch confPath aurPkgsPath -> do
             sysConf <- loadSystemConfig confPath
             doPreInstallChecks $ temporarySystemConfig sysConf
             buildArch sysConf
+            case aurPkgsPath of
+              Nothing -> return ()
+              Just dir -> do
+                logInfo "Installing pre-built AUR packages"
+                pkgs <- map (dir </>) . filter (isInfixOf ".pkg.tar.") <$> listDirectory dir
+                forM_ pkgs installAURPackage
           ConfigureRootfs buildInfoPath -> do
             buildInfo <- loadBuildInfo buildInfoPath
             configureRootfs $ buildInfo ^. systemConfig
