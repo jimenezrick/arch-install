@@ -74,7 +74,7 @@ main = do
           ConfigureRootfs buildInfoPath -> do
             buildInfo <- loadBuildInfo buildInfoPath
             configureRootfs $ buildInfo ^. systemConfig
-            customizeRootfs $ buildInfo ^. systemConfig . custom
+            customizeRootfs $ buildInfo ^. systemConfig . secrets
           RestoreEtc etcSrc -> do
             runCmds_ ["rm -r /etc", [i|git clone #{etcSrc} /etc|], "chmod 700 /etc/.git"]
             logInfo "NOTE: you need to update /etc/fstab and restore file permissions" -- XXX: use mtree directly with arch-chroot?
@@ -99,11 +99,10 @@ runApp m =
       let simpleApp = App {saLogFunc = lf, saProcessContext = pc}
        in runRIO simpleApp m
 
--- TODO: Have secrets.dhall?
 customizeRootfs ::
   (MonadIO m, MonadReader env m, HasLogFunc env) => Maybe [(FilePath, Text)] -> m ()
-customizeRootfs custom = do
-  logInfo "Customizing rootfs to my liking"
+customizeRootfs secrets = do
+  logInfo "Customizing rootfs and writing secrets"
   createFsTree $
     Dir
       "/mnt"
@@ -115,7 +114,7 @@ customizeRootfs custom = do
         logInfo $ fromString [i|Creating file: #{path}|]
         createFile path content
     )
-    custom
+    secrets
   where
     createFile path content
       | "/var/lib/iwd" <- takeDirectory path =

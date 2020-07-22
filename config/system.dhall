@@ -6,5 +6,5 @@
   , keymap = "us"
   , storage = ./storage.dhall espPartUuid rootfsLuksUuid
   , pacman = ./pacman.dhall
-  , custom = ./custom.dhall
+  , secrets = ./secrets.dhall
   }

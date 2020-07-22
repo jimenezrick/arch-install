@@ -90,7 +90,7 @@ data SystemConfig = SystemConfig
     , _keymap :: Text
     , _storage :: StorageConfig
     , _pacman :: PacmanConfig
-    , _custom :: Maybe [(FilePath, Text)]
+    , _secrets :: Maybe [(FilePath, Text)]
     } deriving (Show, Generic)
     deriving FromDhall via Codec (Field (DropPrefix "_")) SystemConfig
 
