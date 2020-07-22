@@ -6,21 +6,23 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-import AUR
-import Checks
-import Chroot
-import Command
-import Config
-import Data.String.Interpolate
-import FsTree
-import Install
-import Options.Generic
 import RIO
 import RIO.FilePath
 import RIO.Process
 import RIO.Text (pack, unpack)
+
+import Data.String.Interpolate
+import Options.Generic
 import Text.Show.Pretty (pPrint)
 import UnliftIO.Environment (getProgName)
+
+import AUR
+import Build
+import Checks
+import Chroot
+import Command
+import Config
+import FsTree
 import Version
 
 data CmdOpts

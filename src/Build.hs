@@ -2,7 +2,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Install where
+module Build where
 
 import RIO hiding (lookup)
 import RIO.Directory

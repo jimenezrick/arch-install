@@ -16,7 +16,8 @@ executable arch-rebuild
   hs-source-dirs:      src
   main-is:             Main.hs
 
-  other-modules:       Config
+  other-modules:       Build
+                     , Config
                      , Checks
                      , Chroot
                      , Command
@@ -24,7 +25,6 @@ executable arch-rebuild
                      , Filesystem
                      , FilePath
                      , FsTree
-                     , Install
                      , Match
                      , Fstab
                      , Error
