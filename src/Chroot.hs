@@ -42,6 +42,8 @@ configureRootfs SystemConfig {..} =
         , [i|mkinitcpio -p linux|]
         , [i|mkinitcpio -p linux-lts|]
         , [i|bootctl install|]
+        , [i|echo Enter root password:|]
+        , [i|passwd|]
         ]
   where
     hooks =
