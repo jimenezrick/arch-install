@@ -7,7 +7,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 import RIO
-import RIO.Directory (listDirectory)
 import RIO.FilePath
 import RIO.Process
 import RIO.Text (pack, unpack)
