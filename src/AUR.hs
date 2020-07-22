@@ -12,7 +12,6 @@ import RIO.Text (pack)
 
 import Data.String.Interpolate
 
-import Build (rootfsMnt)
 import Command
 
 buildAURPackage :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => FilePath -> String -> m ()
@@ -25,8 +24,8 @@ buildAURPackage dest pkg = do
       withModifyEnvVars (insert "PKGDEST" $ pack absDest) do
         runCmd_ "makepkg --syncdeps --rmdeps"
 
-installAURPackage :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => FilePath -> m ()
-installAURPackage path = runCmd_ [i|pacman --sysroot #{rootfsMnt} -U #{path}|]
+installAURPackage :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => FilePath -> FilePath -> m ()
+installAURPackage rootfs path = runCmd_ [i|pacman --sysroot #{rootfs} -U #{path}|]
 
 fetchAURPackage :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => String -> m ()
 fetchAURPackage pkg = do

@@ -8,7 +8,7 @@ import RIO hiding (lookup)
 import RIO.Directory
 import RIO.FilePath
 import RIO.Process
-import RIO.List (sortOn)
+import RIO.List (sortOn, isInfixOf)
 import RIO.Map (fromList, lookup, member)
 
 import qualified RIO.Text as T
@@ -16,6 +16,7 @@ import qualified RIO.Text as T
 import Data.String.Interpolate
 import Data.Text.IO (appendFile, writeFile)
 
+import AUR
 import Chroot
 import Command
 import Config
@@ -41,8 +42,8 @@ wipeRootDisk sysConf = do
         logInfo $ fromString [i|Wiping device: #{dev}|]
         runCmd_ [i|wipefs -a #{dev}|]
 
-buildArch :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env, HasLogFunc env) => LoadedSystemConfig -> m ()
-buildArch loadedSysConf = do
+buildArch :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env, HasLogFunc env) => LoadedSystemConfig -> Maybe FilePath -> m ()
+buildArch loadedSysConf aurPkgsPath = do
     logInfo "Starting Arch Linux build"
     (espDev, rootfsDev) <- partitionDisk $ temporarySystemConfig loadedSysConf ^. storage . rootDisk
     withEncryptedRootfs rootfsDev $ \luksRootfsDev -> do
@@ -52,6 +53,12 @@ buildArch loadedSysConf = do
         buildRootfs sysConf espDev luksRootfsDev $ \espMnt rootfsMnt -> do
             configureRootfsChroot sysConf rootfsMnt
             renderBootEntries sysConf espMnt
+            case aurPkgsPath of
+              Nothing -> return ()
+              Just dir -> do
+                logInfo "Installing pre-built AUR packages"
+                pkgs <- map (dir </>) . filter (isInfixOf ".pkg.tar.") <$> listDirectory dir
+                forM_ pkgs $ installAURPackage rootfsMnt
 
 buildRootfs ::
        (MonadIO m, MonadReader env m, HasProcessContext env, HasLogFunc env)

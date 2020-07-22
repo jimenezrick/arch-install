@@ -11,7 +11,6 @@ import RIO.Directory (listDirectory)
 import RIO.FilePath
 import RIO.Process
 import RIO.Text (pack, unpack)
-import RIO.List (isInfixOf)
 
 import Data.String.Interpolate
 import Options.Generic
@@ -63,13 +62,7 @@ main = do
           BuildArch confPath aurPkgsPath -> do
             sysConf <- loadSystemConfig confPath
             doPreInstallChecks $ temporarySystemConfig sysConf
-            buildArch sysConf
-            case aurPkgsPath of
-              Nothing -> return ()
-              Just dir -> do
-                logInfo "Installing pre-built AUR packages"
-                pkgs <- map (dir </>) . filter (isInfixOf ".pkg.tar.") <$> listDirectory dir
-                forM_ pkgs installAURPackage
+            buildArch sysConf aurPkgsPath
           ConfigureRootfs buildInfoPath -> do
             buildInfo <- loadBuildInfo buildInfoPath
             configureRootfs $ buildInfo ^. systemConfig
