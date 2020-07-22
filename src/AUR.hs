@@ -22,10 +22,10 @@ buildAURPackage dest pkg = do
     withWorkingDir (tmp </> pkg) do
       absDest <- makeAbsolute dest
       withModifyEnvVars (insert "PKGDEST" $ pack absDest) do
-        runCmd_ "makepkg --syncdeps --rmdeps"
+        runCmd_ "makepkg --noconfirm --syncdeps --rmdeps"
 
-installAURPackage :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => FilePath -> FilePath -> m ()
-installAURPackage rootfs path = runCmd_ [i|pacman --sysroot #{rootfs} -U #{path}|]
+installAURPackages :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => FilePath -> [FilePath] -> m ()
+installAURPackages rootfs paths = runCmd_ [i|pacman --noconfirm --root #{rootfs} -U #{unwords paths}|]
 
 fetchAURPackage :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env) => String -> m ()
 fetchAURPackage pkg = do

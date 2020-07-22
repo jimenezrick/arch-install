@@ -55,13 +55,10 @@ buildArch loadedSysConf aurPkgsPath = do
             renderBootEntries sysConf espMnt
             case aurPkgsPath of
               Nothing -> return ()
-              Just srcAur -> do
-                pkgs <- filter (isInfixOf ".pkg.tar.") <$> listDirectory srcAur
-                logInfo $ fromString [i|"Installing pre-built AUR packages: #{pkgs}"|]
-                withTempDirectory (rootfsMnt </> "tmp") "arch-rebuild-aur-" \tmpAur ->
-                  forM_ pkgs \pkg -> do
-                    copyFile (srcAur </> pkg) (tmpAur </> pkg)
-                    installAURPackage rootfsMnt $ "/" </> makeRelative rootfsMnt tmpAur </> pkg
+              Just aurPath -> do
+                pkgs <- filter (isInfixOf ".pkg.tar.") <$> listDirectory aurPath
+                logInfo $ fromString [i|Installing pre-built AUR packages: #{pkgs}|]
+                installAURPackages rootfsMnt $ map (aurPath </>) pkgs
 
 buildRootfs ::
        (MonadIO m, MonadReader env m, HasProcessContext env, HasLogFunc env)
