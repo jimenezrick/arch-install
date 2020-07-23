@@ -63,7 +63,8 @@ buildArch loadedSysConf etcPath aurPkgsPath = do
             (\espMnt rootfsMnt ->
                 case etcPath of
                     Nothing -> return ()
-                    Just path ->
+                    Just path -> do
+                        logInfo $ fromString [i|Restoring /etc from: #{path}|]
                         runCmds_
                             [ [i|rm -r #{rootfsMnt </> "etc"}|]
                             , [i|git clone #{path} #{rootfsMnt </> "etc"}|]

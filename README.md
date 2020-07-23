@@ -12,7 +12,7 @@ wifi-menu
 
 ``` shell
 # Generate all the AUR packages to be installed later during the build
-./arch-rebuild build-aur-packages -c config/system.dhall -d config/pacman/aur-packages
+./arch-rebuild build-aur-packages -c config/system.dhall -d config/restore/aur-packages
 # Get a copy of /etc git repo to be used in the build
 ./tools/bundle-host-etc.sh
 # Start VM
