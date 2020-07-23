@@ -42,23 +42,36 @@ wipeRootDisk sysConf = do
         logInfo $ fromString [i|Wiping device: #{dev}|]
         runCmd_ [i|wipefs -a #{dev}|]
 
-buildArch :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env, HasLogFunc env) => LoadedSystemConfig -> Maybe FilePath -> m ()
-buildArch loadedSysConf aurPkgsPath = do
+buildArch :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env, HasLogFunc env) => LoadedSystemConfig -> Maybe FilePath -> Maybe FilePath -> m ()
+buildArch loadedSysConf etcPath aurPkgsPath = do
     logInfo "Starting Arch Linux build"
     (espDev, rootfsDev) <- partitionDisk $ temporarySystemConfig loadedSysConf ^. storage . rootDisk
     withEncryptedRootfs rootfsDev $ \luksRootfsDev -> do
         makeFilesystemsPartitions espDev luksRootfsDev
         installInfo <- getRootDiskInstallInfo espDev rootfsDev
         let sysConf = resolveSystemConfig loadedSysConf installInfo
-        buildRootfs sysConf espDev luksRootfsDev $ \espMnt rootfsMnt -> do
-            configureRootfsChroot sysConf rootfsMnt
-            renderBootEntries sysConf espMnt
-            case aurPkgsPath of
-              Nothing -> return ()
-              Just aurPath -> do
-                pkgs <- filter (isInfixOf ".pkg.tar.") <$> listDirectory aurPath
-                logInfo $ fromString [i|Installing pre-built AUR packages: #{pkgs}|]
-                installAURPackages rootfsMnt $ map (aurPath </>) pkgs
+        buildRootfs sysConf espDev luksRootfsDev
+            (\espMnt rootfsMnt -> do
+                configureRootfsChroot sysConf rootfsMnt
+                renderBootEntries sysConf espMnt
+                case aurPkgsPath of
+                    Nothing -> return ()
+                    Just path -> do
+                        pkgs <- filter (isInfixOf ".pkg.tar.") <$> listDirectory path
+                        logInfo $ fromString [i|Installing pre-built AUR packages: #{pkgs}|]
+                        installAURPackages rootfsMnt $ map (path </>) pkgs)
+            (\espMnt rootfsMnt ->
+                case etcPath of
+                    Nothing -> return ()
+                    Just path ->
+                        runCmds_
+                            [ [i|rm -r #{rootfsMnt </> "etc"}|]
+                            , [i|git clone #{path} #{rootfsMnt </> "etc"}|]
+                            , [i|chmod 700 #{rootfsMnt </> "etc/.git"}|]
+                            , [i|arch-chroot #{rootfsMnt} bash -c '#{restoreEtcPermissions}'|]
+                            ])
+  where
+    restoreEtcPermissions = "cd /etc; mtree -f .mtree -C -R time | mtree -U -X .mtree.exclude"
 
 buildRootfs ::
        (MonadIO m, MonadReader env m, HasProcessContext env, HasLogFunc env)
@@ -66,8 +79,9 @@ buildRootfs ::
     -> FilePath
     -> FilePath
     -> (FilePath -> FilePath -> m ())
+    -> (FilePath -> FilePath -> m ())
     -> m ()
-buildRootfs sysConf espDev rootfsDev f = do
+buildRootfs sysConf espDev rootfsDev preHook postHook = do
     createDirectoryIfMissing False rootfsMnt
     -- Mount rootfs and create subvols
     mountPoint rootfsDev rootfsMnt
@@ -80,12 +94,15 @@ buildRootfs sysConf espDev rootfsDev f = do
     -- Bootstrap Arch
     maybe (return ()) renderMirrorlist $ sysConf ^. pacman . mirrorlist
     bootstrapArch
-    f espMnt rootfsMnt
+    -- Pre-hook
+    preHook espMnt rootfsMnt
     -- Take snapshots
     takeSubvolSnapshot
         (fromList $ sysConf ^. storage . rootSubvolumes)
         ("@" :: FilePath)
         ("initial-build" :: FilePath)
+    -- Post-hook
+    postHook espMnt rootfsMnt
     umountAllUnder rootfsMnt
   where
     espMnt = rootfsMnt <//> "boot"

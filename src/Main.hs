@@ -20,16 +20,14 @@ import AUR
 import Build
 import Checks
 import Chroot
-import Command
 import Config
 import FsTree
 import Version
 
 data CmdOpts
   = WipeRootDisk {confPath :: FilePath}
-  | BuildArch {confPath :: FilePath, aurPkgsPath :: Maybe FilePath}
+  | BuildArch {confPath :: FilePath, etcPath :: Maybe FilePath, aurPkgsPath :: Maybe FilePath}
   | ConfigureRootfs {buildInfoPath :: FilePath}
-  | RestoreEtc {etcSrc :: FilePath}
   | BuildAurPackages {confPath :: FilePath, dest :: FilePath}
   | ShowBuildInfo {buildInfoPath :: FilePath}
   | Version
@@ -58,17 +56,14 @@ main = do
             sysConf <- temporarySystemConfig <$> loadSystemConfig confPath
             doPreInstallChecks sysConf
             wipeRootDisk sysConf
-          BuildArch confPath aurPkgsPath -> do
+          BuildArch confPath etcPath aurPkgsPath -> do
             sysConf <- loadSystemConfig confPath
             doPreInstallChecks $ temporarySystemConfig sysConf
-            buildArch sysConf aurPkgsPath
+            buildArch sysConf etcPath aurPkgsPath
           ConfigureRootfs buildInfoPath -> do
             buildInfo <- loadBuildInfo buildInfoPath
             configureRootfs $ buildInfo ^. systemConfig
             customizeRootfs $ buildInfo ^. systemConfig . secrets
-          RestoreEtc etcSrc -> do
-            runCmds_ ["rm -r /etc", [i|git clone #{etcSrc} /etc|], "chmod 700 /etc/.git"]
-            logInfo "NOTE: you need to update /etc/fstab and restore file permissions" -- XXX: use mtree directly with arch-chroot?
           BuildAurPackages confPath dest -> do
             sysConf <- temporarySystemConfig <$> loadSystemConfig confPath
             forM_ (unpack <$> sysConf ^. pacman . aur) (buildAURPackage dest)

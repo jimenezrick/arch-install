@@ -13,6 +13,9 @@ wifi-menu
 ``` shell
 # Generate all the AUR packages to be installed later during the build
 ./arch-rebuild build-aur-packages -c config/system.dhall -d config/pacman/aur-packages
+# Get a copy of /etc git repo to be used in the build
+./tools/bundle-host-etc.sh
+# Start VM
 sudo tools/boot-qemu.sh iso [-nographic]
 # Mount this repo inside the VM and run the build (using tools/bootstrap-qemu.sh)
 bash <(curl -sL https://git.io/Jer4x)
@@ -21,7 +24,6 @@ bash <(curl -sL https://git.io/Jer4x)
 ## Things to setup later
 
 - Get /home BTRFS snapshot
-- Restore /etc with: `arch-rebuild restore-etc` (TODO: use mtree to restore file attributes)
 
 ## My BIOS quirks
 
