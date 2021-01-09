@@ -3,5 +3,5 @@ packages: .
 package arch-rebuild
   ghc-options: -j +RTS -A64m -RTS
 
-with-compiler: ghc-8.10.1 
+with-compiler: ghc-8.10.3
 write-ghc-environment-files: always
