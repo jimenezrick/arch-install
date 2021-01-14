@@ -2,7 +2,9 @@
 
 module Version where
 
+import RIO
+
 import GitHash
 
-version :: GitInfo
-version = $$tGitInfoCwd
+version :: Either String GitInfo
+version = $$tGitInfoCwdTry
