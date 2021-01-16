@@ -1,1 +1,7 @@
-None (List { _1 : Text, _2 : Text })
+None
+  ( List
+      { _1 : Text
+      , _2 : Text
+      , _3 : { _1 : Optional Text, _2 : Optional { _1 : Text, _2 : Text } }
+      }
+  )

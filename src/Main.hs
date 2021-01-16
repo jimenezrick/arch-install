@@ -7,7 +7,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 import RIO
-import RIO.FilePath
 import RIO.Process
 import RIO.Text (pack, unpack)
 
@@ -21,8 +20,8 @@ import Build
 import Checks
 import Chroot
 import Config
-import FsTree
 import Version
+import FsTree
 
 data CmdOpts
   = WipeRootDisk {confPath :: FilePath}
@@ -49,7 +48,7 @@ instance HasProcessContext App where
 
 main :: IO ()
 main = do
-  cmd <- pack <$> getProgName >>= getRecord
+  cmd <- getProgName >>= getRecord . pack
   let run =
         case cmd of
           WipeRootDisk confPath -> do
@@ -70,7 +69,7 @@ main = do
           ShowBuildInfo buildInfoPath -> do
             buildInfo <- loadBuildInfo buildInfoPath
             liftIO $ pPrint buildInfo
-          Version -> do
+          Version ->
             liftIO $ pPrint version
   runApp $ do
     catch run (\(ex :: SomeException) -> logError (displayShow ex) >> liftIO exitFailure)
@@ -86,8 +85,11 @@ runApp m =
        in runRIO simpleApp m
 
 customizeRootfs ::
-  (MonadIO m, MonadReader env m, HasLogFunc env) => Maybe [(FilePath, Text)] -> m ()
+  (MonadIO m, MonadReader env m, HasLogFunc env) =>
+  Maybe [(FilePath, Text, (Maybe Text, Maybe (Text, Text)))] ->
+  m ()
 customizeRootfs secrets = do
+  -- XXX: from the config the mountpoints?
   logInfo "Customizing rootfs and writing secrets"
   createFsTree $
     Dir
@@ -96,17 +98,14 @@ customizeRootfs secrets = do
       [Dir "scratch" defAttrs [], Dir "garage" defAttrs [], Dir "usb" defAttrs []]
   maybe
     (return ())
-    ( mapM_ $ \(path, content) -> do
-        logInfo $ fromString [i|Creating file: #{path}|]
-        createFile path content
+    ( mapM_ $ \(path, content, attrs) -> do
+        logInfo $ fromString [i|Storing secret: #{path}|]
+        storeSecret path content $ parseAttrs attrs
     )
     secrets
   where
-    createFile path content
-      | "/var/lib/iwd" <- takeDirectory path =
-        createFsTree $
-          Dir
-            "/var/lib/iwd"
-            (Just 0o700, Just ("root", "root"))
-            [File (takeFileName path) (Content content) (Just 0o600, Just ("root", "root"))]
-      | otherwise = createFsTree $ File path (Content content) defAttrs
+    parseAttrs (mode, owner) =
+      let parse = fromMaybe (error "Main.customizeRootfs: invalid secret file attributes") . readMaybe
+       in (parse . unpack <$> mode, bimap unpack unpack <$> owner)
+    -- XXX: update secrets branch
+    storeSecret path content attrs = createFsTree $ File path (Content content) attrs
