@@ -5,6 +5,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Config where
 
@@ -12,14 +13,14 @@ import RIO
 import RIO.Process
 import RIO.Time
 
+import qualified RIO.Text as T
+
 import Control.Lens
 import Data.Binary
 import Data.String.Conversions (cs)
 import Dhall
 import Dhall.Deriving
 import Network.URI (isURI)
-
-import qualified RIO.Text as T
 
 data BlockDev
   = FsUUID {_uuid :: Text}
