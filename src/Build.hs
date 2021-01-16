@@ -72,7 +72,7 @@ buildArch loadedSysConf etcPath aurPkgsPath = do
                             , [i|arch-chroot #{rootfsMnt} bash -c '#{restoreEtcPermissions}'|]
                             ])
   where
-    restoreEtcPermissions = "cd /etc; mtree -f .mtree -C -R time | mtree -U -X .mtree.exclude"
+    restoreEtcPermissions = "cd /etc; mtree -f .mtree -C -R time | mtree -U -X .mtree.exclude" :: String
 
 buildRootfs ::
        (MonadIO m, MonadReader env m, HasProcessContext env, HasLogFunc env)

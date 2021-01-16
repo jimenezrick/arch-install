@@ -4,4 +4,5 @@ set -eu
 
 DIR=$(cd $(dirname $0); pwd)
 
-sudo git -C /etc bundle create $DIR/../config/restore/etc.bundle --all
+mkdir -p $DIR/../restore
+sudo git -C /etc bundle create $DIR/../restore/etc.bundle --all
