@@ -60,7 +60,7 @@ buildArch loadedSysConf etcPath aurPkgsPath = do
                         pkgs <- filter (isInfixOf ".pkg.tar.") <$> listDirectory path
                         logInfo $ fromString [i|Installing pre-built AUR packages: #{pkgs}|]
                         installAURPackages rootfsMnt $ map (path </>) pkgs)
-            (\espMnt rootfsMnt ->
+            (\_espMnt rootfsMnt ->
                 case etcPath of
                     Nothing -> return ()
                     Just path -> do

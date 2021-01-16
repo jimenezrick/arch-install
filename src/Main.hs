@@ -89,8 +89,7 @@ customizeRootfs ::
   Maybe [(FilePath, Text, (Maybe Text, Maybe (Text, Text)))] ->
   m ()
 customizeRootfs secrets = do
-  -- XXX: from the config the mountpoints?
-  logInfo "Customizing rootfs and writing secrets"
+  logInfo "Customizing rootfs"
   createFsTree $
     Dir
       "/mnt"
@@ -99,7 +98,7 @@ customizeRootfs secrets = do
   maybe
     (return ())
     ( mapM_ $ \(path, content, attrs) -> do
-        logInfo $ fromString [i|Storing secret: #{path}|]
+        logInfo $ fromString [i|Writing secret: #{path}|]
         storeSecret path content $ parseAttrs attrs
     )
     secrets
@@ -107,5 +106,4 @@ customizeRootfs secrets = do
     parseAttrs (mode, owner) =
       let parse = fromMaybe (error "Main.customizeRootfs: invalid secret file attributes") . readMaybe
        in (parse . unpack <$> mode, bimap unpack unpack <$> owner)
-    -- XXX: update secrets branch
     storeSecret path content attrs = createFsTree $ File path (Content content) attrs
