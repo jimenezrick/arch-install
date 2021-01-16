@@ -3,7 +3,7 @@
 + Boot an Arch ISO and apply your remote custom config:
 
 ``` shell
-wifi-menu
+iwctl
 # Run the build using my system.dhall
 ./arch-rebuild build-arch -c https://git.io/JJlfz
 ```
