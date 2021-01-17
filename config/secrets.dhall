@@ -1,3 +1,4 @@
+-- The real secrets are stored in the `secrets` git branch
 None
   ( List
       { _1 : Text
