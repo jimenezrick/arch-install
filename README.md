@@ -21,7 +21,11 @@ bash <(curl -sL https://git.io/Jer4x)
 
 ## Things to setup later
 
-- Get /home BTRFS snapshot
+- Get /home BTRFS snapshot:
+
+``` shell
+sudo ./tools/copy-home.sh <home-subvol-mount-point>
+```
 
 ## My BIOS quirks
 
