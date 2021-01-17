@@ -14,7 +14,7 @@ import RIO.Map (fromList, lookup, member)
 import qualified RIO.Text as T
 
 import Data.String.Interpolate
-import Data.Text.IO (appendFile, writeFile)
+import Data.Text.IO (writeFile)
 
 import AUR
 import Chroot
@@ -131,7 +131,7 @@ buildRootfs sysConf espDev rootfsDev preHook postHook = do
     renderFstab = do
         let fstabPath = rootfsMnt <//> "/etc/fstab"
         logInfo $ fromString [i|Rendering fstab to: #{fstabPath}|]
-        liftIO $ appendFile fstabPath =<< generateFstab (sysConf ^. storage . fstabEntries)
+        liftIO $ writeFile fstabPath =<< generateFstab (sysConf ^. storage . fstabEntries)
 
     renderMirrorlist servers = do
         logInfo $ fromString [i|Overwriting mirrorlist with: #{servers}|]
