@@ -17,8 +17,8 @@ import Error
 
 import qualified Disk
 
-renderFstab :: MonadUnliftIO m => [FstabEntry] -> m Text
-renderFstab entries = unlines . map pack . concat <$> mapM renderDev entries
+generateFstab :: MonadUnliftIO m => [FstabEntry] -> m Text
+generateFstab entries = unlines . map pack . concat <$> mapM renderDev entries
   where
     formatEntry fsSpec entry =
         [i|#{fsSpec} #{entry^.fsMountPoint} #{entry^.fsType} #{entry^.fsOpts} #{entry^.fsDump} #{entry^.fsck}|]

@@ -104,12 +104,15 @@ buildRootfs sysConf espDev rootfsDev preHook postHook = do
         ("initial-build" :: FilePath)
     -- Post-hook
     postHook espMnt rootfsMnt
+    renderFstab -- We generate again fstab on top of the restored /etc
     umountAllUnder rootfsMnt
   where
     espMnt = rootfsMnt <//> "boot"
+
     createDiskSubvols subvols = do
         logInfo $ fromString [i|Creating BTRFS subvolumes on: #{rootfsDev}|]
         forM_ subvols $ \subvol -> runCmd_ [i|btrfs subvolume create #{rootfsMnt <//> subvol}|]
+
     mountDiskSubvols subvols = do
         logInfo $
             fromString
@@ -117,18 +120,24 @@ buildRootfs sysConf espDev rootfsDev preHook postHook = do
         forM_ subvols $ \(subvol, subvolPath) -> do
             when (subvolPath /= "/") $ createDirectoryIfMissing True $ rootfsMnt <//> subvolPath
             mountSubvol subvol rootfsDev (rootfsMnt <//> subvolPath)
+
     bootstrapArch = do
         logInfo $ fromString [i|Bootstrapping Arch on: #{rootfsMnt}|]
         let pkgList = T.unwords $ sysConf ^. pacman . packages
             grpList = T.unwords $ sysConf ^. pacman . groups
         runCmd_ [i|pacstrap #{rootfsMnt} #{pkgList} #{grpList}|]
+        renderFstab
+
+    renderFstab = do
         let fstabPath = rootfsMnt <//> "/etc/fstab"
         logInfo $ fromString [i|Rendering fstab to: #{fstabPath}|]
-        liftIO $ appendFile fstabPath =<< renderFstab (sysConf ^. storage . fstabEntries)
+        liftIO $ appendFile fstabPath =<< generateFstab (sysConf ^. storage . fstabEntries)
+
     renderMirrorlist servers = do
         logInfo $ fromString [i|Overwriting mirrorlist with: #{servers}|]
         liftIO $ writeFile "/etc/pacman.d/mirrorlist" . T.unlines $
             map (\s -> fromString [i|Server = #{s}|]) servers
+
     takeSubvolSnapshot subvols targetSubvol targetName =
         when (member "@snapshots" subvols) $ do
             logInfo $ fromString [i|Taking snapshot of BTRFS subvolume: #{targetSubvol}|]
