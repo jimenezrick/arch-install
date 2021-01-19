@@ -5,7 +5,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 
 module Config where
 
@@ -90,7 +90,16 @@ instance Binary PacmanConfig
 
 makeLenses ''PacmanConfig
 
-instance (FromDhall a, FromDhall b, FromDhall c) => FromDhall (a, b, c)
+type Attrs = (Maybe Text, Maybe (Text, Text))
+
+data FileType
+  = Regular {_path :: FilePath, _content :: Text, _attrs :: Attrs}
+  | Directory {_path :: FilePath, _attrs :: Attrs}
+  | WithAttrs {_path :: FilePath, _attrs :: Attrs}
+  deriving (Show, Generic)
+  deriving (FromDhall) via Codec (Field (DropPrefix "_")) FileType
+
+instance Binary FileType
 
 data SystemConfig = SystemConfig
   { _hostname :: Text,
@@ -99,7 +108,7 @@ data SystemConfig = SystemConfig
     _keymap :: Text,
     _storage :: StorageConfig,
     _pacman :: PacmanConfig,
-    _secrets :: Maybe [(FilePath, Text, (Maybe Text, Maybe (Text, Text)))]
+    _extraFiles :: [FileType]
   }
   deriving (Show, Generic)
   deriving (FromDhall) via Codec (Field (DropPrefix "_")) SystemConfig

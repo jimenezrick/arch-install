@@ -3,14 +3,12 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 import RIO
 import RIO.Process
 import RIO.Text (pack, unpack)
 
-import Data.String.Interpolate
 import Options.Generic
 import Text.Show.Pretty (pPrint)
 import UnliftIO.Environment (getProgName)
@@ -20,8 +18,8 @@ import Build
 import Checks
 import Chroot
 import Config
-import Version
 import FsTree
+import Version
 
 data CmdOpts
   = WipeRootDisk {confPath :: FilePath}
@@ -62,7 +60,7 @@ main = do
           ConfigureRootfs buildInfoPath -> do
             buildInfo <- loadBuildInfo buildInfoPath
             configureRootfs $ buildInfo ^. systemConfig
-            customizeRootfs $ buildInfo ^. systemConfig . secrets
+            customizeRootfs $ buildInfo ^. systemConfig . extraFiles
           BuildAurPackages confPath dest -> do
             sysConf <- temporarySystemConfig <$> loadSystemConfig confPath
             forM_ (unpack <$> sysConf ^. pacman . aur) (buildAURPackage dest)
@@ -84,26 +82,14 @@ runApp m =
       let simpleApp = App {saLogFunc = lf, saProcessContext = pc}
        in runRIO simpleApp m
 
-customizeRootfs ::
-  (MonadIO m, MonadReader env m, HasLogFunc env) =>
-  Maybe [(FilePath, Text, (Maybe Text, Maybe (Text, Text)))] ->
-  m ()
-customizeRootfs secrets = do
-  logInfo "Customizing rootfs"
-  createFsTree $
-    Dir
-      "/mnt"
-      defAttrs
-      [Dir "scratch" defAttrs [], Dir "garage" defAttrs [], Dir "usb" defAttrs []]
-  maybe
-    (return ())
-    ( mapM_ $ \(path, content, attrs) -> do
-        logInfo $ fromString [i|Writing secret: #{path}|]
-        storeSecret path content $ parseAttrs attrs
-    )
-    secrets
+customizeRootfs :: (MonadIO m, MonadReader env m, HasLogFunc env) => [FileType] -> m ()
+customizeRootfs files = do
+  logInfo "Copying extra files to rootfs"
+  mapM_ copy files
   where
     parseAttrs (mode, owner) =
-      let parse = fromMaybe (error "Main.customizeRootfs: invalid secret file attributes") . readMaybe
+      let parse = fromMaybe (error "Main.customizeRootfs: invalid file attributes") . readMaybe
        in (parse . unpack <$> mode, bimap unpack unpack <$> owner)
-    storeSecret path content attrs = createFsTree $ File path (Content content) attrs
+    copy (Regular path content attrs) = createFsTree $ File path (Content content) $ parseAttrs attrs
+    copy (Directory path attrs) = createFsTree $ Dir path (parseAttrs attrs) []
+    copy (Config.WithAttrs path attrs) = createFsTree $ FsTree.WithAttrs path $ parseAttrs attrs
