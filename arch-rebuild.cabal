@@ -53,6 +53,3 @@ executable arch-rebuild
                      , binary
                      , pretty-show
                      , githash
-
-                     -- https://github.com/well-typed/cborg/issues/242
-                     , primitive ==0.7.0.1
