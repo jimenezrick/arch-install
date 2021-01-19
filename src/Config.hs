@@ -22,6 +22,8 @@ import Dhall
 import Dhall.Deriving
 import Network.URI (isURI)
 
+import FsTree (chmod)
+
 data BlockDev
   = FsUUID {_uuid :: Text}
   | PartUUID {_partUuid :: Text}
@@ -152,4 +154,6 @@ loadBuildInfo :: MonadIO m => FilePath -> m BuildInfo
 loadBuildInfo path' = decode . fromStrictBytes <$> readFileBinary path'
 
 saveBuildInfo :: MonadIO m => FilePath -> BuildInfo -> m ()
-saveBuildInfo path' buildInfo = writeFileBinary path' . toStrictBytes $ encode buildInfo
+saveBuildInfo path' buildInfo = do
+  writeFileBinary path' . toStrictBytes $ encode buildInfo
+  liftIO $ chmod path' 0o400

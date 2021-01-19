@@ -7,6 +7,8 @@ module FsTree
     defAttrs,
     createFsTree,
     createFsTreeAt,
+    chmod,
+    chown
   )
 where
 
