@@ -32,14 +32,11 @@ data FsTree
       FilePath
       Content
       Attrs
-  | Mode
-      FilePath
-      Attrs
   | Dir
       FilePath
       Attrs
       [FsTree]
-  | DirEmpty
+  | WithAttrs
       FilePath
       Attrs
 
@@ -58,19 +55,17 @@ createFsTreeAt base fstree =
 createFile :: FilePath -> FsTree -> IO ()
 createFile base (File name (Content txt) _) = T.writeFile (base </> name) txt
 createFile base (File name (Copy src) _) = copyFile src (base </> name)
-createFile _ (Mode _ _) = return ()
-createFile base (DirEmpty name _) = mkdir (base </> name)
 createFile base (Dir name _ subtree) = do
   mkdir (base </> name)
   mapM_ (createFile $ base </> name) subtree
+createFile _ (WithAttrs _ _) = return ()
 
 applyAttrs :: FilePath -> FsTree -> IO ()
 applyAttrs base (File name _ attrs) = useAttrs (base </> name) attrs
-applyAttrs base (Mode name attrs) = useAttrs (base </> name) attrs
-applyAttrs base (DirEmpty name attrs) = useAttrs (base </> name) attrs
 applyAttrs base (Dir name attrs subtree) = do
   useAttrs (base </> name) attrs
   mapM_ (applyAttrs $ base </> name) subtree
+applyAttrs base (WithAttrs name attrs) = useAttrs (base </> name) attrs
 
 useAttrs :: FilePath -> Attrs -> IO ()
 useAttrs path (mode, perm) = do
