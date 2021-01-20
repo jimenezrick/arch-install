@@ -8,10 +8,8 @@ source $DIR/qemu.conf
 
 # https://wiki.gentoo.org/wiki/QEMU/Options#Hard_drive
 run_qemu() {
-	# To enable KVM acceleration add to the flags:
-	#   -machine q35,accel=kvm -cpu host
-	# Note: using KVM caused strange problems on gnupg when verifying package signatures
 	qemu-system-x86_64 \
+		-machine q35,accel=kvm -cpu host \
 		-smp 2 -m 2G \
 		-drive if=pflash,format=raw,readonly,file=/usr/share/edk2-ovmf/x64/OVMF_CODE.fd \
 		-virtfs local,path=$DIR/..,security_model=passthrough,mount_tag=arch-rebuild \
