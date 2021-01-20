@@ -2,6 +2,7 @@
 
 set -e
 
+pacman --noconfirm -Sy archlinux-keyring
 pacman --noconfirm -Sy git
 
 echo Bootstrapping arch-rebuild from local repo...
