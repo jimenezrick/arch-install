@@ -10,5 +10,5 @@
         ]
       , boot = ./boot.dhall rootfsLuksUuid
       , fstabEntries = ./fstab.dhall espPartUuid
-      , passphrase = ./secrets/diskPassphrase.dhall as Text
+      , passphrase = ./secrets/disk-passphrase as Text
       }
