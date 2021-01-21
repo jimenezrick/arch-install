@@ -186,7 +186,7 @@ withEncryptedRootfs rootfsDev f = do
     bracket
         (do logInfo $ fromString [i|Encrypting rootfs partition with LUKS: #{rootfsDev}|]
             runCmds_
-                [ [i|cryptsetup -y -v luksFormat --type luks2 #{rootfsDev}|]
+                [ [i|cryptsetup -q -v luksFormat --type luks2 #{rootfsDev}|]
                 , [i|cryptsetup --persistent --allow-discards open #{rootfsDev} #{luksDevName}|]
                 ]
             return [i|/dev/mapper/#{luksDevName}|])
