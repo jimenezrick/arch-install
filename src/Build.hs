@@ -46,7 +46,8 @@ buildArch :: (MonadUnliftIO m, MonadReader env m, HasProcessContext env, HasLogF
 buildArch loadedSysConf etcPath aurPkgsPath = do
     logInfo "Starting Arch Linux build"
     (espDev, rootfsDev) <- partitionDisk $ temporarySystemConfig loadedSysConf ^. storage . rootDisk
-    withEncryptedRootfs rootfsDev $ \luksRootfsDev -> do
+    let pass = temporarySystemConfig loadedSysConf ^. storage . passphrase
+    withEncryptedRootfs rootfsDev pass $ \luksRootfsDev -> do
         makeFilesystemsPartitions espDev luksRootfsDev
         installInfo <- getRootDiskInstallInfo espDev rootfsDev
         let sysConf = resolveSystemConfig loadedSysConf installInfo
@@ -179,14 +180,15 @@ makeFilesystemsPartitions espDev rootfsDev = do
 withEncryptedRootfs ::
        (MonadUnliftIO m, MonadReader env m, HasProcessContext env, HasLogFunc env)
     => FilePath
+    -> Text
     -> (FilePath -> m ())
     -> m ()
-withEncryptedRootfs rootfsDev f = do
+withEncryptedRootfs rootfsDev passphrase f = do
     let luksDevName = "cryptroot" :: String
     bracket
         (do logInfo $ fromString [i|Encrypting rootfs partition with LUKS: #{rootfsDev}|]
             runCmds_
-                [ [i|cryptsetup -q -v luksFormat --type luks2 #{rootfsDev}|]
+                [ [i|cryptsetup -q -v luksFormat --type luks2 #{rootfsDev} --key-file <(echo "#{passphrase}")|]
                 , [i|cryptsetup --persistent --allow-discards open #{rootfsDev} #{luksDevName}|]
                 ]
             return [i|/dev/mapper/#{luksDevName}|])

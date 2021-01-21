@@ -70,7 +70,8 @@ data StorageConfig = StorageConfig
   { _rootDisk :: BlockDev,
     _rootSubvolumes :: [(String, FilePath)],
     _boot :: BootConfig,
-    _fstabEntries :: [FstabEntry]
+    _fstabEntries :: [FstabEntry],
+    _passphrase :: Text
   }
   deriving (Show, Generic)
   deriving (FromDhall) via Codec (Field (DropPrefix "_")) StorageConfig
