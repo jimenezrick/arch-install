@@ -188,8 +188,8 @@ withEncryptedRootfs rootfsDev passphrase f = do
     bracket
         (do logInfo $ fromString [i|Encrypting rootfs partition with LUKS: #{rootfsDev}|]
             runCmds_
-                [ [i|cryptsetup -q -v --type luks2 --key-file <(echo "#{passphrase}") luksFormat #{rootfsDev}|]
-                , [i|cryptsetup --persistent --allow-discards --key-file <(echo "#{passphrase}") open #{rootfsDev} #{luksDevName}|]
+                [ [i|cryptsetup -q -v --type luks2 --key-file <(echo -n "#{passphrase}") luksFormat #{rootfsDev}|]
+                , [i|cryptsetup --persistent --allow-discards --key-file <(echo -n "#{passphrase}") open #{rootfsDev} #{luksDevName}|]
                 ]
             return [i|/dev/mapper/#{luksDevName}|])
         (\_ -> runCmd_ [i|cryptsetup close #{luksDevName}|])
